@@ -15,7 +15,10 @@ fun TextStyle.notScale(): TextStyle {
     val fontScale: Float = LocalConfiguration.current.fontScale
     return this.copy(
         fontSize = this.fontSize / fontScale,
-        letterSpacing = this.letterSpacing / fontScale
+        letterSpacing = if (this.letterSpacing.value.isNaN())
+            0.sp
+        else
+            (this.letterSpacing.value / fontScale).sp
     )
 }
 

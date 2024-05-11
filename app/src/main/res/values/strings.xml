@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Snapnote</string>
+    <string name="graceful_sentence">Thank you for choosing my app to accompany you on your journey of productivity and creativity.</string>
+    <string name="cta_sentence_next">NEXT</string>
+    <string name="permission_request_sentence">Unlock the full potential of our app by granting notification permissions, ensuring you never miss an important reminder or update.</string>
+    <string name="cta_sentence_continue">CONTINUE</string>
+    <string name="cta_sentence_back">Back</string>
 </resources>
