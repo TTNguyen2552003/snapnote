@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
@@ -130,6 +131,7 @@ fun PermissionRequestScreen(isDarkMode: Boolean = false) {
                                         elevation = buttonElevation.dp,
                                         shape = RoundedCornerShape(size = 8.dp)
                                     )
+                                    .clip(shape = RoundedCornerShape(size = 8.dp))
                                     .drawBehind {
                                         drawRoundRect(
                                             color = if (isDarkMode)
@@ -149,13 +151,14 @@ fun PermissionRequestScreen(isDarkMode: Boolean = false) {
                                                 isPress = true
                                                 tryAwaitRelease()
                                                 isPress = false
+                                                /* TODO */
                                             }
                                         )
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = stringResource(id = R.string.cta_sentence_continue),
+                                    text = stringResource(id = R.string.button_label_continue),
                                     style = TextStyle(
                                         fontFamily = robotoFamily,
                                         fontWeight = FontWeight.Bold,
@@ -178,7 +181,7 @@ fun PermissionRequestScreen(isDarkMode: Boolean = false) {
                         MutableInteractionSource()
                     }
                     Text(
-                        text = stringResource(id = R.string.cta_sentence_back),
+                        text = stringResource(id = R.string.button_label_back),
                         style = TextStyle(
                             fontFamily = robotoFamily,
                             fontWeight = FontWeight.Bold,

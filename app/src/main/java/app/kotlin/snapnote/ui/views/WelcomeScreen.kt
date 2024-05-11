@@ -20,12 +20,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
@@ -50,7 +50,6 @@ import app.kotlin.snapnote.ui.theme.primaryContainerLight
 import app.kotlin.snapnote.ui.theme.robotoFamily
 import app.kotlin.snapnote.ui.theme.surfaceDark
 import app.kotlin.snapnote.ui.theme.surfaceLight
-import kotlin.random.Random
 
 @Composable
 fun WelcomeScreen(isDarkMode: Boolean = false) {
@@ -113,8 +112,6 @@ fun WelcomeScreen(isDarkMode: Boolean = false) {
 
                         @Composable
                         fun Button() {
-                            var randomNumber: Int by remember { mutableIntStateOf(value = 0) }
-
                             var isPressed: Boolean by remember { mutableStateOf(value = false) }
 
                             val buttonElevation: Int by animateIntAsState(
@@ -129,6 +126,7 @@ fun WelcomeScreen(isDarkMode: Boolean = false) {
                                         elevation = buttonElevation.dp,
                                         shape = RoundedCornerShape(size = 8.dp)
                                     )
+                                    .clip(shape = RoundedCornerShape(size = 8.dp))
                                     .drawBehind {
                                         drawRoundRect(
                                             color = if (isDarkMode)
@@ -148,14 +146,14 @@ fun WelcomeScreen(isDarkMode: Boolean = false) {
                                                 isPressed = true
                                                 tryAwaitRelease()
                                                 isPressed = false
-                                                randomNumber = Random.nextInt()
+                                                /* TODO */
                                             }
                                         )
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = stringResource(id = R.string.cta_sentence_next) + " " + randomNumber.toString(),
+                                    text = stringResource(id = R.string.button_label_next),
                                     style = TextStyle(
                                         fontFamily = robotoFamily,
                                         fontWeight = FontWeight.Bold,
