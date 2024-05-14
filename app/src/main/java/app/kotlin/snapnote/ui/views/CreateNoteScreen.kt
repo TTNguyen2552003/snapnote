@@ -30,7 +30,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -57,7 +59,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import app.kotlin.snapnote.R
+import app.kotlin.snapnote.ui.theme.bodyMedium
 import app.kotlin.snapnote.ui.theme.bodySmall
+import app.kotlin.snapnote.ui.theme.headlineSmall
 import app.kotlin.snapnote.ui.theme.labelLarge
 import app.kotlin.snapnote.ui.theme.labelSmall
 import app.kotlin.snapnote.ui.theme.notScale
@@ -221,6 +225,12 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                 verticalArrangement = Arrangement.spacedBy(space = 12.dp),
                 horizontalAlignment = Alignment.Start
             ) {
+                var showDialog by remember {
+                    mutableStateOf(value = false)
+                }
+                if (showDialog)
+                    RenameFolderDialog(onDismissRequest = { showDialog = false })
+
                 @Composable
                 fun FolderField() {
                     Row(
@@ -250,7 +260,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                     interactionSource = interactionSource,
                                     indication = null
                                 ) {
-                                    /* TODO */
+                                    showDialog = true
                                 },
                             tint = if (isDarkMode)
                                 onSurfaceDark
@@ -599,6 +609,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
             }
         }
         Components()
+
     }
 }
 
@@ -660,4 +671,173 @@ fun PickerChip(
                 onSurfaceLight
         )
     }
+}
+
+@Composable
+fun RenameFolderDialog(
+    isDarkMode: Boolean = false,
+    onDismissRequest: () -> Unit
+) {
+    var newFolderName: String by remember {
+        mutableStateOf(value = "")
+    }
+    AlertDialog(
+        onDismissRequest = { /*TODO*/ },
+        confirmButton = {
+            var isPressed: Boolean by remember {
+                mutableStateOf(value = false)
+            }
+
+            val buttonElevation: Int by animateIntAsState(
+                targetValue =
+                if (isPressed)
+                    0
+                else
+                    1,
+                label = "button elevation interaction"
+            )
+
+            Box(
+                modifier = Modifier
+                    .clip(shape = RoundedCornerShape(size = 8.dp))
+                    .shadow(
+                        elevation = buttonElevation.dp,
+                        shape = RoundedCornerShape(size = 8.dp)
+                    )
+                    .drawBehind {
+                        if (newFolderName != "") {
+                            drawRoundRect(
+                                color = if (isDarkMode)
+                                    primaryContainerDark
+                                else
+                                    primaryContainerLight,
+                                cornerRadius = CornerRadius(x = 8.dp.toPx())
+                            )
+                        } else {
+                            drawRoundRect(
+                                color = if (isDarkMode)
+                                    Color(color = 0xfffaf1ea)
+                                else
+                                    Color(color = 0xffbcb5b0),
+                                cornerRadius = CornerRadius(x = 8.dp.toPx())
+                            )
+                        }
+                    }
+                    .padding(
+                        top = 4.dp,
+                        bottom = 4.dp,
+                        start = 8.dp,
+                        end = 8.dp
+                    )
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = if (newFolderName != "") {
+                                {
+                                    isPressed = true
+                                    tryAwaitRelease()
+                                    isPressed = false
+                                    /* TODO */
+                                }
+                            } else {
+                                {
+                                    /* TODO */
+                                }
+                            }
+                        )
+                    }
+            ) {
+                Text(
+                    text = stringResource(id = R.string.button_label_save),
+                    style = labelLarge.notScale(),
+                    color = if (newFolderName != "") {
+                        if (isDarkMode)
+                            onPrimaryContainerDark
+                        else
+                            onPrimaryContainerLight
+                    } else {
+                        if (isDarkMode)
+                            surfaceDark
+                        else
+                            surfaceLight
+                    }
+                )
+            }
+        },
+        dismissButton = {
+            val interactionSource: MutableInteractionSource = remember {
+                MutableInteractionSource()
+            }
+
+            Box(
+                modifier = Modifier
+                    .clip(shape = RoundedCornerShape(size = 8.dp))
+                    .padding(
+                        top = 4.dp,
+                        bottom = 4.dp,
+                        start = 8.dp,
+                        end = 8.dp
+                    )
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = { onDismissRequest() }
+                    )
+            ) {
+                Text(
+                    text = stringResource(id = R.string.button_label_cancel),
+                    style = labelLarge.notScale(),
+                    color = if (isDarkMode)
+                        outlineDark
+                    else
+                        outlineLight
+                )
+            }
+        },
+        title = {
+            Text(
+                text = stringResource(id = R.string.dialog_title_create_a_new_folder),
+                style = headlineSmall.notScale(),
+                color = if (isDarkMode)
+                    onSurfaceDark
+                else
+                    onSurfaceLight
+            )
+        },
+        text = {
+            OutlinedTextField(
+                value = newFolderName,
+                onValueChange = { newFolderName = it },
+                textStyle = bodyMedium.notScale(),
+                placeholder = {
+                    Text(
+                        text = "Enter the folder name",
+                        style = bodyMedium.notScale(),
+                        color = if (isDarkMode)
+                            outlineDark
+                        else
+                            outlineLight
+                    )
+                },
+                trailingIcon = {
+                    val interactionSource: MutableInteractionSource = remember {
+                        MutableInteractionSource()
+                    }
+                    if (newFolderName != "")
+                        Icon(
+                            painter = painterResource(id = R.drawable.cancel_icon),
+                            contentDescription = "clear text",
+                            modifier = Modifier
+                                .width(width = 24.dp)
+                                .height(height = 24.dp)
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = { newFolderName = "" }
+                                )
+                        )
+                }
+            )
+        },
+        shape = RoundedCornerShape(size = 16.dp)
+    )
 }

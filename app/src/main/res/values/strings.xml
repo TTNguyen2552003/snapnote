@@ -9,4 +9,8 @@
     <string name="button_label_done">Done</string>
     <string name="place_holder_note_title">Title</string>
     <string name="place_holder_note_body">Write something...</string>
+    <string name="button_label_save">Save</string>
+    <string name="button_label_cancel">Cancel</string>
+    <string name="dialog_title_create_a_new_folder">Create a new folder</string>
+    <string name="place_holder_create_a_new_folder">Enter the folder name</string>
 </resources>

@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import app.kotlin.snapnote.ui.views.CreateNoteScreen
-import app.kotlin.snapnote.ui.views.WelcomeScreen
+import app.kotlin.snapnote.ui.views.DraftScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -16,3 +16,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
