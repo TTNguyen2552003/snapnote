@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,7 +57,12 @@ fun WelcomeScreen(isDarkMode: Boolean = false) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = if (isDarkMode) surfaceDark else surfaceLight)
+            .background(
+                color = if (isDarkMode)
+                    surfaceDark
+                else
+                    surfaceLight
+            )
             .windowInsetsPadding(insets = WindowInsets.statusBars)
     ) {
         Spacer(modifier = Modifier.height(8.dp))
@@ -70,7 +76,10 @@ fun WelcomeScreen(isDarkMode: Boolean = false) {
                 fontSize = 36.sp,
                 lineHeight = 44.sp
             ).notScale(),
-            color = if (isDarkMode) onSurfaceDark else onSurfaceLight,
+            color = if (isDarkMode)
+                onSurfaceDark
+            else
+                onSurfaceLight,
             modifier = Modifier.align(alignment = Alignment.TopCenter)
         )
 
@@ -79,6 +88,7 @@ fun WelcomeScreen(isDarkMode: Boolean = false) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .wrapContentHeight()
                     .padding(
                         start = 28.dp,
                         end = 28.dp
@@ -161,7 +171,10 @@ fun WelcomeScreen(isDarkMode: Boolean = false) {
                                         lineHeight = 28.sp,
                                         textAlign = TextAlign.Center
                                     ).notScale(),
-                                    color = if (isDarkMode) onPrimaryContainerDark else onPrimaryContainerLight
+                                    color = if (isDarkMode)
+                                        onPrimaryContainerDark
+                                    else
+                                        onPrimaryContainerLight
                                 )
                             }
                         }

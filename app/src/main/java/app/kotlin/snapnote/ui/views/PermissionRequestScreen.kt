@@ -76,7 +76,10 @@ fun PermissionRequestScreen(isDarkMode: Boolean = false) {
                 fontSize = 36.sp,
                 lineHeight = 44.sp
             ).notScale(),
-            color = if (isDarkMode) onSurfaceDark else onSurfaceLight,
+            color = if (isDarkMode)
+                onSurfaceDark
+            else
+                onSurfaceLight,
             modifier = Modifier.align(alignment = Alignment.TopCenter)
         )
 
@@ -120,10 +123,12 @@ fun PermissionRequestScreen(isDarkMode: Boolean = false) {
                         @Composable
                         fun Button() {
                             var isPress: Boolean by remember { mutableStateOf(value = false) }
+
                             val buttonElevation: Int by animateIntAsState(
                                 targetValue = if (isPress) 0 else 1,
                                 label = "button elevation interaction"
                             )
+
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -166,7 +171,10 @@ fun PermissionRequestScreen(isDarkMode: Boolean = false) {
                                         lineHeight = 28.sp,
                                         textAlign = TextAlign.Center
                                     ).notScale(),
-                                    color = if (isDarkMode) onPrimaryContainerDark else onPrimaryContainerLight
+                                    color = if (isDarkMode)
+                                        onPrimaryContainerDark
+                                    else
+                                        onPrimaryContainerLight
                                 )
                             }
                         }
@@ -177,9 +185,6 @@ fun PermissionRequestScreen(isDarkMode: Boolean = false) {
 
                 @Composable
                 fun TextButton() {
-                    val interactionSource: MutableInteractionSource = remember {
-                        MutableInteractionSource()
-                    }
                     Text(
                         text = stringResource(id = R.string.button_label_back),
                         style = TextStyle(
@@ -191,10 +196,13 @@ fun PermissionRequestScreen(isDarkMode: Boolean = false) {
                         )
                             .notScale(),
                         color = if (isDarkMode) outlineDark else outlineLight,
-                        modifier = Modifier.clickable(
-                            interactionSource = interactionSource,
-                            indication = null
-                        ) { /* TODO */ }
+                        modifier = Modifier.pointerInput(Unit){
+                            detectTapGestures(
+                                onPress = {
+                                    /* TODO */
+                                }
+                            )
+                        }
                     )
                 }
                 TextButton()

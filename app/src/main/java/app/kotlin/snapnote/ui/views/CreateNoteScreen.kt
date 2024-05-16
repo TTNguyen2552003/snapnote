@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -32,7 +34,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,6 +60,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import app.kotlin.snapnote.R
+import app.kotlin.snapnote.ui.theme.bodyLarge
 import app.kotlin.snapnote.ui.theme.bodyMedium
 import app.kotlin.snapnote.ui.theme.bodySmall
 import app.kotlin.snapnote.ui.theme.headlineSmall
@@ -103,6 +105,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .wrapContentHeight()
                     .padding(
                         start = 28.dp,
                         end = 28.dp
@@ -111,12 +114,9 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
             ) {
                 @Composable
                 fun DiscardButton() {
-                    val interactionSource: MutableInteractionSource = remember {
-                        MutableInteractionSource()
-                    }
-
                     Box(
                         modifier = Modifier
+                            .clip(shape = RoundedCornerShape(size = 8.dp))
                             .drawBehind {
                                 drawRoundRect(
                                     color = if (isDarkMode)
@@ -132,18 +132,21 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                 start = 8.dp,
                                 end = 8.dp
                             )
-                            .clip(shape = RoundedCornerShape(size = 8.dp))
-                            .clickable(
-                                indication = null,
-                                interactionSource = interactionSource
-                            ) {
-                                /* TODO */
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onPress = {
+                                        /* TODO */
+                                    }
+                                )
                             }
                     ) {
                         Text(
                             text = stringResource(id = R.string.button_label_discard),
                             style = labelSmall.notScale(),
-                            color = if (isDarkMode) outlineDark else outlineLight
+                            color = if (isDarkMode)
+                                outlineDark
+                            else
+                                outlineLight
                         )
                     }
                 }
@@ -218,6 +221,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .wrapContentHeight()
                     .padding(
                         start = 28.dp,
                         end = 28.dp
@@ -225,19 +229,20 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                 verticalArrangement = Arrangement.spacedBy(space = 12.dp),
                 horizontalAlignment = Alignment.Start
             ) {
-                var showDialog by remember {
+                var showDialog: Boolean by remember {
                     mutableStateOf(value = false)
                 }
+
                 if (showDialog)
                     RenameFolderDialog(onDismissRequest = { showDialog = false })
 
                 @Composable
                 fun FolderField() {
                     Row(
+                        modifier = Modifier.wrapContentSize(),
                         horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-
 //                        Folder
                         PickerChip(
                             isDarkMode = isDarkMode,
@@ -247,20 +252,19 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                         ) { /* TODO */ }
 
 //                        Create a new folder button
-                        val interactionSource: MutableInteractionSource = remember {
-                            MutableInteractionSource()
-                        }
                         Icon(
                             painter = painterResource(id = R.drawable.create_new_folder),
                             contentDescription = "Create a new folder button",
                             modifier = Modifier
                                 .width(16.dp)
                                 .height(16.dp)
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null
-                                ) {
-                                    showDialog = true
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onPress = {
+                                            showDialog = true
+                                            /* TODO */
+                                        }
+                                    )
                                 },
                             tint = if (isDarkMode)
                                 onSurfaceDark
@@ -276,6 +280,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .wrapContentHeight()
                             .padding(
                                 start = 4.dp,
                                 end = 4.dp
@@ -309,31 +314,29 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                         LengthsOfForm()
 
 //                        Copy button
-                        val interactionSource: MutableInteractionSource = remember {
-                            MutableInteractionSource()
-                        }
                         val clipboardManager: ClipboardManager = LocalClipboardManager.current
                         val context: Context = LocalContext.current
-
                         Icon(
                             painter = painterResource(id = R.drawable.copy_icon),
                             contentDescription = "copy button",
                             modifier = Modifier
                                 .width(width = 16.dp)
                                 .height(height = 16.dp)
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null
-                                ) {
-                                    val annotatedString = AnnotatedString(text = "Hello world")
-                                    clipboardManager.setText(annotatedString)
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "Text copied to clipboard",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        .show()
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onPress = {
+                                            val annotatedString =
+                                                AnnotatedString(text = "Hello world")
+                                            clipboardManager.setText(annotatedString)
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Text copied to clipboard",
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
+                                        }
+                                    )
                                 }
                         )
                     }
@@ -356,80 +359,92 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                 )
                             }
                     ) {
-                        var title: String by remember { mutableStateOf(value = "") }
-                        BasicTextField(
-                            value = if (title.length <= MAX_TITLE_LENGTH)
-                                title
-                            else
-                                title.substring(
-                                    startIndex = 0,
-                                    endIndex = MAX_TITLE_LENGTH + 1
-                                ),
-                            onValueChange = { title = it },
+                        var title: String by remember {
+                            mutableStateOf(value = "")
+                        }
+
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .drawBehind {
-                                    val strokeWidth: Float = (0.5).dp.toPx()
-                                    val y: Float = size.height - strokeWidth
-                                    drawLine(
-                                        color = if (isDarkMode)
-                                            outlineDark
-                                        else
-                                            outlineLight,
-                                        start = Offset(
-                                            x = 0.dp.toPx(),
-                                            y = y
-                                        ),
-                                        end = Offset(
-                                            x = size.width,
-                                            y = y
-                                        )
-                                    )
-                                }
+                                .wrapContentHeight()
                                 .padding(
                                     top = 8.dp,
                                     bottom = 8.dp,
                                     start = 16.dp,
                                     end = 16.dp
-                                )
-                                .horizontalScroll(state = rememberScrollState()),
-                            textStyle = labelLarge
-                                .copy(
-                                    color = if (isDarkMode)
-                                        onSurfaceDark
-                                    else
-                                        onSurfaceLight
-                                )
-                                .notScale(),
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                capitalization = KeyboardCapitalization.Words,
-                                imeAction = ImeAction.Next
-                            ),
-                            singleLine = true,
-                            cursorBrush = SolidColor(
-                                if (isDarkMode)
-                                    onPrimaryContainerDark
+                                ),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            BasicTextField(
+                                value = if (title.length <= MAX_TITLE_LENGTH)
+                                    title
                                 else
-                                    onPrimaryContainerLight
-                            ),
-                            decorationBox = { innerTextField ->
-                                if (title.isEmpty()) {
-                                    Text(
-                                        text = stringResource(id = R.string.place_holder_note_title),
-                                        style = labelLarge.notScale(),
+                                    title.substring(
+                                        startIndex = 0,
+                                        endIndex = MAX_TITLE_LENGTH + 1
+                                    ),
+                                onValueChange = { title = it },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .wrapContentHeight()
+                                    .horizontalScroll(state = rememberScrollState()),
+                                textStyle = labelLarge
+                                    .notScale()
+                                    .copy(
                                         color = if (isDarkMode)
-                                            outlineDark
+                                            onSurfaceDark
                                         else
-                                            outlineLight
-                                    )
+                                            onSurfaceLight
+                                    ),
+                                keyboardOptions = KeyboardOptions.Default.copy(
+                                    capitalization = KeyboardCapitalization.Words,
+                                    imeAction = ImeAction.Next
+                                ),
+                                singleLine = true,
+                                cursorBrush = SolidColor(
+                                    if (isDarkMode)
+                                        onPrimaryContainerDark
+                                    else
+                                        onPrimaryContainerLight
+                                ),
+                                decorationBox = { innerTextField ->
+                                    if (title.isEmpty()) {
+                                        Text(
+                                            text = stringResource(id = R.string.place_holder_note_title),
+                                            style = labelLarge.notScale(),
+                                            color = if (isDarkMode)
+                                                outlineDark
+                                            else
+                                                outlineLight
+                                        )
+                                    }
+                                    innerTextField()
                                 }
-                                innerTextField()
-                            }
-                        )
+                            )
+
+//                            Trailing icon
+                            if (title.isNotEmpty())
+                                Icon(
+                                    painter = painterResource(id = R.drawable.cancel_icon),
+                                    contentDescription = "clear text",
+                                    modifier = Modifier
+                                        .width(width = 20.dp)
+                                        .height(height = 20.dp)
+                                        .pointerInput(Unit) {
+                                            detectTapGestures(
+                                                onPress = {
+                                                    title = ""
+                                                }
+                                            )
+                                        }
+                                )
+                        }
 
                         var body: String by remember {
                             mutableStateOf(value = "")
                         }
+
                         BasicTextField(
                             value = if (body.length <= MAX_BODY_LENGTH)
                                 body
@@ -441,7 +456,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                             onValueChange = { body = it },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .fillMaxHeight()
+                                .weight(1f)
                                 .padding(
                                     top = 8.dp,
                                     bottom = 8.dp,
@@ -450,13 +465,15 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                 )
                                 .verticalScroll(state = rememberScrollState()),
                             textStyle = bodySmall
+                                .notScale()
                                 .copy(
                                     color = if (isDarkMode)
                                         onSurfaceDark
                                     else onSurfaceLight
-                                )
-                                .notScale(),
-                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                                ),
+                            keyboardOptions = KeyboardOptions
+                                .Default
+                                .copy(imeAction = ImeAction.Done),
                             cursorBrush = SolidColor(
                                 if (isDarkMode)
                                     onPrimaryContainerDark
@@ -484,7 +501,9 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                 @Composable
                 fun Reminder() {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -496,30 +515,24 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                     isDarkMode = isDarkMode,
                                     iconRes = R.drawable.date_icon,
                                     iconContentDescription = "date picker",
-                                    label = "Date"
-                                ) {
-                                    /* TODO */
-                                }
+                                    label = "Date",
+                                    onClick = {/* TODO */}
+                                )
 
 //                                Time picker
                                 PickerChip(
                                     isDarkMode = isDarkMode,
                                     iconRes = R.drawable.time_icon,
                                     iconContentDescription = "time picker",
-                                    label = "Time"
-                                ) {
-                                    /* TODO */
-                                }
+                                    label = "Time",
+                                    onClick = {/* TODO */}
+                                )
                             }
                         }
                         ReminderPicker()
 
                         @Composable
                         fun ReminderSwitch() {
-                            val interactionSource: MutableInteractionSource = remember {
-                                MutableInteractionSource()
-                            }
-
                             var checked: Boolean by remember {
                                 mutableStateOf(value = false)
                             }
@@ -592,14 +605,14 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                             )
                                         )
                                     }
-                                    .clickable(
-                                        interactionSource = interactionSource,
-                                        indication = null,
-                                        onClick = {
-                                            checked = !checked
-                                            /* TODO */
-                                        }
-                                    )
+                                    .pointerInput(Unit){
+                                        detectTapGestures(
+                                            onPress = {
+                                                checked = !checked
+                                                /* TODO */
+                                            }
+                                        )
+                                    }
                             )
                         }
                         ReminderSwitch()
@@ -621,11 +634,9 @@ fun PickerChip(
     label: String,
     onClick: () -> Unit
 ) {
-    val interactionSource: MutableInteractionSource = remember {
-        MutableInteractionSource()
-    }
     Row(
         modifier = Modifier
+            .wrapContentSize()
             .clip(shape = RoundedCornerShape(size = 8.dp))
             .drawBehind {
                 drawRoundRect(
@@ -642,11 +653,14 @@ fun PickerChip(
                 start = 8.dp,
                 end = 8.dp
             )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            ),
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        onClick()
+                        /* TODO */
+                    }
+                )
+            },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(space = 8.dp)
     ) {
@@ -689,8 +703,7 @@ fun RenameFolderDialog(
             }
 
             val buttonElevation: Int by animateIntAsState(
-                targetValue =
-                if (isPressed)
+                targetValue = if (isPressed)
                     0
                 else
                     1,
@@ -699,29 +712,26 @@ fun RenameFolderDialog(
 
             Box(
                 modifier = Modifier
-                    .clip(shape = RoundedCornerShape(size = 8.dp))
                     .shadow(
                         elevation = buttonElevation.dp,
                         shape = RoundedCornerShape(size = 8.dp)
                     )
+                    .clip(shape = RoundedCornerShape(size = 8.dp))
                     .drawBehind {
-                        if (newFolderName != "") {
-                            drawRoundRect(
-                                color = if (isDarkMode)
+                        drawRoundRect(
+                            color = if (newFolderName.isNotEmpty()) {
+                                if (isDarkMode)
                                     primaryContainerDark
                                 else
-                                    primaryContainerLight,
-                                cornerRadius = CornerRadius(x = 8.dp.toPx())
-                            )
-                        } else {
-                            drawRoundRect(
-                                color = if (isDarkMode)
+                                    primaryContainerLight
+                            } else {
+                                if (isDarkMode)
                                     Color(color = 0xfffaf1ea)
                                 else
-                                    Color(color = 0xffbcb5b0),
-                                cornerRadius = CornerRadius(x = 8.dp.toPx())
-                            )
-                        }
+                                    Color(color = 0xffbcb5b0)
+                            },
+                            cornerRadius = CornerRadius(x = 8.dp.toPx())
+                        )
                     }
                     .padding(
                         top = 4.dp,
@@ -731,7 +741,7 @@ fun RenameFolderDialog(
                     )
                     .pointerInput(Unit) {
                         detectTapGestures(
-                            onPress = if (newFolderName != "") {
+                            onPress = if (newFolderName.isNotEmpty()) {
                                 {
                                     isPressed = true
                                     tryAwaitRelease()
@@ -749,7 +759,7 @@ fun RenameFolderDialog(
                 Text(
                     text = stringResource(id = R.string.button_label_save),
                     style = labelLarge.notScale(),
-                    color = if (newFolderName != "") {
+                    color = if (newFolderName.isNotEmpty()) {
                         if (isDarkMode)
                             onPrimaryContainerDark
                         else
@@ -764,10 +774,6 @@ fun RenameFolderDialog(
             }
         },
         dismissButton = {
-            val interactionSource: MutableInteractionSource = remember {
-                MutableInteractionSource()
-            }
-
             Box(
                 modifier = Modifier
                     .clip(shape = RoundedCornerShape(size = 8.dp))
@@ -777,11 +783,14 @@ fun RenameFolderDialog(
                         start = 8.dp,
                         end = 8.dp
                     )
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = { onDismissRequest() }
-                    )
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                onDismissRequest()
+                                /* TODO */
+                            }
+                        )
+                    }
             ) {
                 Text(
                     text = stringResource(id = R.string.button_label_cancel),
@@ -804,39 +813,94 @@ fun RenameFolderDialog(
             )
         },
         text = {
-            OutlinedTextField(
-                value = newFolderName,
-                onValueChange = { newFolderName = it },
-                textStyle = bodyMedium.notScale(),
-                placeholder = {
-                    Text(
-                        text = "Enter the folder name",
-                        style = bodyMedium.notScale(),
-                        color = if (isDarkMode)
+            var newFolderName: String by remember {
+                mutableStateOf(value = "")
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .clip(shape = RoundedCornerShape(size = 8.dp))
+                    .drawBehind {
+                        drawRoundRect(
+                            color = if (isDarkMode)
+                                surfaceContainerDark
+                            else
+                                surfaceContainerLight,
+                            cornerRadius = CornerRadius(x = 8.dp.toPx())
+                        )
+                    }
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 12.dp,
+                        bottom = 12.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                BasicTextField(
+                    value = newFolderName,
+                    onValueChange = { newFolderName = it },
+                    modifier = Modifier
+                        .wrapContentHeight()
+                        .weight(1f),
+                    textStyle = bodyMedium
+                        .notScale()
+                        .copy(
+                            color = if (isDarkMode)
+                                onSurfaceDark
+                            else
+                                onSurfaceLight
+                        ),
+                    keyboardOptions = KeyboardOptions
+                        .Default
+                        .copy(imeAction = ImeAction.Done),
+                    singleLine = true,
+                    cursorBrush = SolidColor(
+                        value = if (isDarkMode)
+                            outlineDark
+                        else
+                            outlineLight
+                    ),
+                    decorationBox = { innerTextField ->
+                        if (newFolderName.isEmpty()) {
+                            Text(
+                                text = stringResource(id = R.string.place_holder_create_a_new_folder),
+                                style = bodyLarge.notScale(),
+                                color = if (isDarkMode)
+                                    outlineDark
+                                else
+                                    outlineLight
+                            )
+                        }
+                        innerTextField()
+                    }
+                )
+
+//                Trailing icon
+                if (newFolderName.isNotEmpty()) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.cancel_icon),
+                        contentDescription = "clear text",
+                        modifier = Modifier
+                            .width(width = 24.dp)
+                            .height(height = 24.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onPress = {
+                                        newFolderName = ""
+                                        /* TODO */
+                                    }
+                                )
+                            },
+                        tint = if (isDarkMode)
                             outlineDark
                         else
                             outlineLight
                     )
-                },
-                trailingIcon = {
-                    val interactionSource: MutableInteractionSource = remember {
-                        MutableInteractionSource()
-                    }
-                    if (newFolderName != "")
-                        Icon(
-                            painter = painterResource(id = R.drawable.cancel_icon),
-                            contentDescription = "clear text",
-                            modifier = Modifier
-                                .width(width = 24.dp)
-                                .height(height = 24.dp)
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null,
-                                    onClick = { newFolderName = "" }
-                                )
-                        )
                 }
-            )
+            }
         },
         shape = RoundedCornerShape(size = 16.dp)
     )
