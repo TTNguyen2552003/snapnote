@@ -50,6 +50,22 @@ android {
 }
 
 dependencies {
+//    Add ViewModel utilities  for Compose
+    val lifecycleVersion = "2.8.0"
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:$lifecycleVersion")
+
+    val navVersion = "2.7.7"
+    implementation("androidx.navigation:navigation-compose:$navVersion")
+
+    val kotlinCoroutineVersion = "1.3.9"
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinCoroutineVersion")
+
+    val accompanistPermissionVersion = "0.35.1-alpha"
+    implementation("com.google.accompanist:accompanist-permissions:$accompanistPermissionVersion")
+
+    val animatedVectorCompose = "1.1.0-alpha01"
+    implementation("androidx.compose.animation:animation-graphics:$animatedVectorCompose")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

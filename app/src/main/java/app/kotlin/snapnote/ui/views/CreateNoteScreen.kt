@@ -7,17 +7,13 @@ import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,6 +32,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +57,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import app.kotlin.snapnote.R
 import app.kotlin.snapnote.ui.theme.bodyLarge
 import app.kotlin.snapnote.ui.theme.bodyMedium
@@ -81,12 +81,17 @@ import app.kotlin.snapnote.ui.theme.surfaceContainerLowDark
 import app.kotlin.snapnote.ui.theme.surfaceContainerLowLight
 import app.kotlin.snapnote.ui.theme.surfaceDark
 import app.kotlin.snapnote.ui.theme.surfaceLight
-
-const val MAX_TITLE_LENGTH = 100
-const val MAX_BODY_LENGTH = 1000
+import app.kotlin.snapnote.ui.viewmodels.CreateNoteScreenUiState
+import app.kotlin.snapnote.ui.viewmodels.CreateNoteScreenViewModel
 
 @Composable
-fun CreateNoteScreen(isDarkMode: Boolean = false) {
+fun CreateNoteScreen(
+    isDarkMode: Boolean = false,
+    navController: NavController,
+    createNoteScreenViewModel: CreateNoteScreenViewModel = viewModel()
+) {
+    val createNoteScreenUiState: State<CreateNoteScreenUiState> =
+        createNoteScreenViewModel.uiState.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -135,7 +140,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onPress = {
-                                        /* TODO */
+                                        navController.popBackStack()
                                     }
                                 )
                             }
@@ -234,7 +239,12 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                 }
 
                 if (showDialog)
-                    RenameFolderDialog(onDismissRequest = { showDialog = false })
+                    RenameFolderDialog(
+                        onDismissRequest = { showDialog = false },
+                        onSaveCurrentFolderName = {
+                            createNoteScreenViewModel.updateCurrentNewFolderName(newFolderName = it)
+                        }
+                    )
 
                 @Composable
                 fun FolderField() {
@@ -248,7 +258,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                             isDarkMode = isDarkMode,
                             iconRes = R.drawable.folder_icon,
                             iconContentDescription = "folder icon",
-                            label = "Uncategorized"
+                            label = createNoteScreenUiState.value.currentFolderName
                         ) { /* TODO */ }
 
 //                        Create a new folder button
@@ -293,7 +303,9 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                             Row(horizontalArrangement = Arrangement.spacedBy(space = 40.dp)) {
 //                                Title length
                                 Text(
-                                    text = "title: " + "0" + "/100",
+                                    text = "title: "
+                                            + "${createNoteScreenUiState.value.title.length}"
+                                            + "/${MAX_TITLE_LENGTH}",
                                     style = bodySmall.notScale(),
                                     color = if (isDarkMode)
                                         onSurfaceDark
@@ -303,7 +315,9 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
 
 //                                Body length
                                 Text(
-                                    text = "body: " + "0" + "/1000",
+                                    text = "body: "
+                                            + "${createNoteScreenUiState.value.body.length}"
+                                            + "/${MAX_BODY_LENGTH}",
                                     style = bodySmall.notScale(),
                                     color = if (isDarkMode)
                                         onSurfaceDark
@@ -326,7 +340,11 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                     detectTapGestures(
                                         onPress = {
                                             val annotatedString =
-                                                AnnotatedString(text = "Hello world")
+                                                AnnotatedString(
+                                                    text = createNoteScreenUiState.value.title
+                                                            + " "
+                                                            + createNoteScreenUiState.value.body
+                                                )
                                             clipboardManager.setText(annotatedString)
                                             Toast
                                                 .makeText(
@@ -359,14 +377,27 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                 )
                             }
                     ) {
-                        var title: String by remember {
-                            mutableStateOf(value = "")
-                        }
-
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight()
+                                .drawBehind {
+                                    drawLine(
+                                        color = if (isDarkMode)
+                                            outlineDark
+                                        else
+                                            outlineLight,
+                                        start = Offset(
+                                            x = 0.dp.toPx(),
+                                            y = size.height - 0.5.dp.toPx(),
+                                        ),
+                                        end = Offset(
+                                            x = size.width,
+                                            y = size.height - 0.5.dp.toPx()
+                                        ),
+                                        strokeWidth = 0.5.dp.toPx()
+                                    )
+                                }
                                 .padding(
                                     top = 8.dp,
                                     bottom = 8.dp,
@@ -377,18 +408,13 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             BasicTextField(
-                                value = if (title.length <= MAX_TITLE_LENGTH)
-                                    title
-                                else
-                                    title.substring(
-                                        startIndex = 0,
-                                        endIndex = MAX_TITLE_LENGTH + 1
-                                    ),
-                                onValueChange = { title = it },
+                                value = createNoteScreenUiState.value.title,
+                                onValueChange = {
+                                    createNoteScreenViewModel.updateTitle(newTitle = it)
+                                },
                                 modifier = Modifier
                                     .weight(1f)
-                                    .wrapContentHeight()
-                                    .horizontalScroll(state = rememberScrollState()),
+                                    .wrapContentHeight(),
                                 textStyle = labelLarge
                                     .notScale()
                                     .copy(
@@ -409,7 +435,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                         onPrimaryContainerLight
                                 ),
                                 decorationBox = { innerTextField ->
-                                    if (title.isEmpty()) {
+                                    if (createNoteScreenUiState.value.title.isEmpty()) {
                                         Text(
                                             text = stringResource(id = R.string.place_holder_note_title),
                                             style = labelLarge.notScale(),
@@ -424,7 +450,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                             )
 
 //                            Trailing icon
-                            if (title.isNotEmpty())
+                            if (createNoteScreenUiState.value.title.isNotEmpty())
                                 Icon(
                                     painter = painterResource(id = R.drawable.cancel_icon),
                                     contentDescription = "clear text",
@@ -434,26 +460,18 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                         .pointerInput(Unit) {
                                             detectTapGestures(
                                                 onPress = {
-                                                    title = ""
+                                                    createNoteScreenViewModel.updateTitle(newTitle = "")
                                                 }
                                             )
                                         }
                                 )
                         }
 
-                        var body: String by remember {
-                            mutableStateOf(value = "")
-                        }
-
                         BasicTextField(
-                            value = if (body.length <= MAX_BODY_LENGTH)
-                                body
-                            else
-                                body.substring(
-                                    startIndex = 0,
-                                    endIndex = MAX_BODY_LENGTH + 1
-                                ),
-                            onValueChange = { body = it },
+                            value = createNoteScreenUiState.value.body,
+                            onValueChange = {
+                                createNoteScreenViewModel.updateBody(newBody = it)
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
@@ -469,7 +487,8 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                 .copy(
                                     color = if (isDarkMode)
                                         onSurfaceDark
-                                    else onSurfaceLight
+                                    else
+                                        onSurfaceLight
                                 ),
                             keyboardOptions = KeyboardOptions
                                 .Default
@@ -481,7 +500,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                     onPrimaryContainerLight
                             ),
                             decorationBox = { innerTextField ->
-                                if (body.isEmpty()) {
+                                if (createNoteScreenUiState.value.body.isEmpty()) {
                                     Text(
                                         text = stringResource(id = R.string.place_holder_note_body),
                                         style = bodySmall.notScale(),
@@ -516,7 +535,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                     iconRes = R.drawable.date_icon,
                                     iconContentDescription = "date picker",
                                     label = "Date",
-                                    onClick = {/* TODO */}
+                                    onClick = {/* TODO */ }
                                 )
 
 //                                Time picker
@@ -525,7 +544,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                     iconRes = R.drawable.time_icon,
                                     iconContentDescription = "time picker",
                                     label = "Time",
-                                    onClick = {/* TODO */}
+                                    onClick = {/* TODO */ }
                                 )
                             }
                         }
@@ -533,12 +552,8 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
 
                         @Composable
                         fun ReminderSwitch() {
-                            var checked: Boolean by remember {
-                                mutableStateOf(value = false)
-                            }
-
                             val containerColor: Color by animateColorAsState(
-                                targetValue = if (checked) {
+                                targetValue = if (createNoteScreenUiState.value.isReminderSet) {
                                     if (isDarkMode)
                                         primaryContainerDark
                                     else
@@ -557,7 +572,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                             )
 
                             val thumbColor: Color by animateColorAsState(
-                                targetValue = if (checked) {
+                                targetValue = if (createNoteScreenUiState.value.isReminderSet) {
                                     if (isDarkMode)
                                         onPrimaryContainerDark.copy(alpha = 0.5f)
                                     else
@@ -576,7 +591,7 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                             )
 
                             val xThumb: Int by animateIntAsState(
-                                targetValue = if (checked)
+                                targetValue = if (createNoteScreenUiState.value.isReminderSet)
                                     28
                                 else
                                     12,
@@ -605,10 +620,10 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
                                             )
                                         )
                                     }
-                                    .pointerInput(Unit){
+                                    .pointerInput(Unit) {
                                         detectTapGestures(
                                             onPress = {
-                                                checked = !checked
+                                                createNoteScreenViewModel.pressOnSwitch()
                                                 /* TODO */
                                             }
                                         )
@@ -622,7 +637,6 @@ fun CreateNoteScreen(isDarkMode: Boolean = false) {
             }
         }
         Components()
-
     }
 }
 
@@ -690,11 +704,13 @@ fun PickerChip(
 @Composable
 fun RenameFolderDialog(
     isDarkMode: Boolean = false,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
+    onSaveCurrentFolderName: (String) -> Unit
 ) {
     var newFolderName: String by remember {
-        mutableStateOf(value = "")
+        mutableStateOf(value = "Uncategorized")
     }
+
     AlertDialog(
         onDismissRequest = { /*TODO*/ },
         confirmButton = {
@@ -746,11 +762,11 @@ fun RenameFolderDialog(
                                     isPressed = true
                                     tryAwaitRelease()
                                     isPressed = false
-                                    /* TODO */
+                                    onSaveCurrentFolderName(newFolderName)
+                                    onDismissRequest()
                                 }
                             } else {
                                 {
-                                    /* TODO */
                                 }
                             }
                         )
@@ -787,7 +803,6 @@ fun RenameFolderDialog(
                         detectTapGestures(
                             onPress = {
                                 onDismissRequest()
-                                /* TODO */
                             }
                         )
                     }
@@ -813,9 +828,6 @@ fun RenameFolderDialog(
             )
         },
         text = {
-            var newFolderName: String by remember {
-                mutableStateOf(value = "")
-            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -841,7 +853,14 @@ fun RenameFolderDialog(
             ) {
                 BasicTextField(
                     value = newFolderName,
-                    onValueChange = { newFolderName = it },
+                    onValueChange = {
+                        newFolderName = if (it.length > MAX_FOLDER_NAME_LENGTH)
+                            it.substring(
+                                startIndex = 0,
+                                endIndex = MAX_FOLDER_NAME_LENGTH
+                            )
+                        else it
+                    },
                     modifier = Modifier
                         .wrapContentHeight()
                         .weight(1f),
@@ -890,7 +909,6 @@ fun RenameFolderDialog(
                                 detectTapGestures(
                                     onPress = {
                                         newFolderName = ""
-                                        /* TODO */
                                     }
                                 )
                             },
@@ -902,6 +920,10 @@ fun RenameFolderDialog(
                 }
             }
         },
-        shape = RoundedCornerShape(size = 16.dp)
+        shape = RoundedCornerShape(size = 16.dp),
+        containerColor = if (isDarkMode)
+            surfaceDark
+        else
+            surfaceLight
     )
 }

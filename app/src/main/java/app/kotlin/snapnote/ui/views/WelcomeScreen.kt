@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import app.kotlin.snapnote.R
 import app.kotlin.snapnote.ui.theme.bodySmall
 import app.kotlin.snapnote.ui.theme.notScale
@@ -53,7 +54,10 @@ import app.kotlin.snapnote.ui.theme.surfaceDark
 import app.kotlin.snapnote.ui.theme.surfaceLight
 
 @Composable
-fun WelcomeScreen(isDarkMode: Boolean = false) {
+fun WelcomeScreen(
+    isDarkMode: Boolean = false,
+    navController: NavController
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -156,7 +160,7 @@ fun WelcomeScreen(isDarkMode: Boolean = false) {
                                                 isPressed = true
                                                 tryAwaitRelease()
                                                 isPressed = false
-                                                /* TODO */
+                                                navController.navigate(route = Destination.PermissionRequestScreen.route)
                                             }
                                         )
                                     },

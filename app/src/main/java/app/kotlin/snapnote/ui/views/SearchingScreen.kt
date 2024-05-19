@@ -23,28 +23,34 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import app.kotlin.snapnote.R
 import app.kotlin.snapnote.ui.theme.bodySmall
 import app.kotlin.snapnote.ui.theme.errorDark
@@ -64,9 +70,22 @@ import app.kotlin.snapnote.ui.theme.surfaceContainerHighestDark
 import app.kotlin.snapnote.ui.theme.surfaceContainerHighestLight
 import app.kotlin.snapnote.ui.theme.surfaceContainerLight
 import app.kotlin.snapnote.ui.theme.titleSmall
+import app.kotlin.snapnote.ui.viewmodels.Highlights
+import app.kotlin.snapnote.ui.viewmodels.NoteShown
+import app.kotlin.snapnote.ui.viewmodels.SearchingScreenUiState
+import app.kotlin.snapnote.ui.viewmodels.SearchingScreenViewModel
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun SearchingScreen(isDarkMode: Boolean = false) {
+fun SearchingScreen(
+    isDarkMode: Boolean = false,
+    navController: NavController,
+    searchingScreenViewModel: SearchingScreenViewModel = viewModel()
+) {
+    val searchingScreenUiState: State<SearchingScreenUiState> = searchingScreenViewModel
+        .uiState
+        .collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -93,9 +112,6 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
             ) {
                 @Composable
                 fun SearchBar() {
-                    var keyword: String by remember {
-                        mutableStateOf(value = "")
-                    }
 
                     Row(
                         modifier = Modifier
@@ -140,12 +156,22 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
                                         outlineLight
                                 )
 
+                                val focusRequester:FocusRequester = remember { FocusRequester() }
+                                val focusManager:FocusManager = LocalFocusManager.current
+
+                                LaunchedEffect(Unit) {
+                                    focusRequester.requestFocus()
+                                    focusManager.moveFocus(FocusDirection.Enter)
+                                }
                                 BasicTextField(
-                                    value = keyword,
-                                    onValueChange = { keyword = it },
+                                    value = searchingScreenUiState.value.keyword,
+                                    onValueChange = {
+                                        searchingScreenViewModel.updateKeyword(newKeyword = it)
+                                    },
                                     modifier = Modifier
                                         .wrapContentHeight()
-                                        .weight(weight = 1f),
+                                        .weight(weight = 1f)
+                                        .focusRequester(focusRequester = focusRequester),
                                     keyboardOptions = KeyboardOptions
                                         .Default
                                         .copy(imeAction = ImeAction.Search),
@@ -157,7 +183,7 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
                                             outlineLight
                                     ),
                                     decorationBox = { innerTextField ->
-                                        if (keyword.isEmpty()) {
+                                        if (searchingScreenUiState.value.keyword.isEmpty()) {
                                             // Display placeholder when text is empty
                                             Text(
                                                 text = stringResource(id = R.string.place_holder_search_bar),
@@ -176,7 +202,7 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
                         Head()
 
 //                        Trailing Icon
-                        if (keyword.isNotEmpty())
+                        if (searchingScreenUiState.value.keyword.isNotEmpty())
                             Icon(
                                 painter = painterResource(id = R.drawable.cancel_icon),
                                 contentDescription = "clear search",
@@ -186,7 +212,7 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
                                     .pointerInput(Unit) {
                                         detectTapGestures(
                                             onPress = {
-                                                keyword = ""
+                                                searchingScreenViewModel.updateKeyword(newKeyword = "")
                                             }
                                         )
                                     },
@@ -209,9 +235,7 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
                         outlineLight,
                     modifier = Modifier.pointerInput(Unit) {
                         detectTapGestures(
-                            onPress = {
-                                /* TODO */
-                            }
+                            onPress = { navController.popBackStack() }
                         )
                     }
                 )
@@ -223,11 +247,6 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
 
         @Composable
         fun Results() {
-            val sampleNote = NoteShown()
-
-            var sampleIsDone: Boolean by remember {
-                mutableStateOf(value = false)
-            }
 
             LazyColumn(
                 modifier = Modifier
@@ -241,13 +260,16 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
                 verticalArrangement = Arrangement.spacedBy(space = 16.dp)
             ) {
                 @Composable
-                fun Note() {
+                fun Note(
+                    noteShown: NoteShown,
+                    highlights: Highlights
+                ) {
                     Row(
                         modifier = Modifier
                             .clip(shape = RoundedCornerShape(size = 8.dp))
                             .drawBehind {
                                 drawRoundRect(
-                                    color = if (sampleIsDone) {
+                                    color = if (noteShown.isDone) {
                                         if (isDarkMode)
                                             surfaceContainerHighestDark
                                         else
@@ -279,14 +301,13 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
                                     .pointerInput(Unit) {
                                         detectTapGestures(
                                             onPress = {
-                                                sampleIsDone = !sampleIsDone
                                                 /* TODO */
                                             }
                                         )
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
-                                if (!sampleIsDone)
+                                if (!noteShown.isDone)
                                     Icon(
                                         painter = painterResource(id = R.drawable.checkbox_icon),
                                         contentDescription = "check box",
@@ -322,9 +343,9 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
                             ) {
 //                                            Title
                                 Text(
-                                    text = sampleNote.title,
+                                    text = highlights.title,
                                     style = titleSmall.notScale(),
-                                    color = if (!sampleIsDone) {
+                                    color = if (!noteShown.isDone) {
                                         if (isDarkMode)
                                             onSurfaceDark
                                         else
@@ -338,46 +359,10 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
                                 )
 
 //                                            Body
-                                val targetWord = "sample"
-                                val startIndex: Int = sampleNote.body.indexOf(string = targetWord)
-                                val endIndex: Int = startIndex + targetWord.length
-                                val highlights: AnnotatedString = buildAnnotatedString {
-                                    append(
-                                        text = sampleNote
-                                            .body
-                                            .substring(
-                                                startIndex = 0,
-                                                endIndex = startIndex
-                                            )
-                                    )
-                                    withStyle(
-                                        style = SpanStyle(
-                                            color = Color(color = 0xFFDC3545),
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    ) {
-                                        append(
-                                            text = sampleNote
-                                                .body
-                                                .substring(
-                                                    startIndex = startIndex,
-                                                    endIndex = endIndex + 1
-                                                )
-                                        )
-                                    }
-                                    append(
-                                        text = sampleNote
-                                            .body
-                                            .substring(
-                                                startIndex = endIndex + 1,
-                                                endIndex = sampleNote.body.length
-                                            )
-                                    )
-                                }
                                 Text(
-                                    text = highlights,
+                                    text = highlights.body,
                                     style = bodySmall.notScale(),
-                                    color = if (!sampleIsDone) {
+                                    color = if (!noteShown.isDone) {
                                         if (isDarkMode)
                                             onSurfaceDark
                                         else
@@ -394,17 +379,14 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
 
                                 @Composable
                                 fun Reminder() {
-                                    Row(
-                                        horizontalArrangement = Arrangement
-                                            .spacedBy(space = 8.dp)
-                                    ) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(space = 8.dp)) {
                                         Icon(
                                             painter = painterResource(id = R.drawable.reminder_icon),
                                             contentDescription = "reminder",
                                             modifier = Modifier
                                                 .width(width = 16.dp)
                                                 .height(height = 16.dp),
-                                            tint = if (!sampleIsDone) {
+                                            tint = if (!noteShown.isDone) {
                                                 if (isDarkMode)
                                                     onSurfaceDark
                                                 else
@@ -426,9 +408,9 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
                                             ) {
 //                                                            Date
                                                 Text(
-                                                    text = sampleNote.date.toString(),
+                                                    text = noteShown.date,
                                                     style = labelSmall.notScale(),
-                                                    color = if (!sampleIsDone) {
+                                                    color = if (!noteShown.isDone) {
                                                         if (isDarkMode)
                                                             onSurfaceDark
                                                         else
@@ -443,9 +425,9 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
 
 //                                                            Time
                                                 Text(
-                                                    text = sampleNote.time.toString(),
+                                                    text = noteShown.time,
                                                     style = labelSmall.notScale(),
-                                                    color = if (!sampleIsDone) {
+                                                    color = if (!noteShown.isDone) {
                                                         if (isDarkMode)
                                                             onSurfaceDark
                                                         else
@@ -521,8 +503,11 @@ fun SearchingScreen(isDarkMode: Boolean = false) {
                     }
                 }
 
-                items(count = 2) {
-                    Note()
+                items(searchingScreenUiState.value.results.size) { index ->
+                    Note(
+                        noteShown = searchingScreenUiState.value.results[index],
+                        highlights = searchingScreenUiState.value.highlights[index]
+                    )
                 }
             }
         }
