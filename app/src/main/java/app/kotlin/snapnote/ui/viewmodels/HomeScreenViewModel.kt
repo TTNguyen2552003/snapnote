@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
 data class NoteShown(
     val originalIndex: Int,
@@ -22,8 +24,12 @@ data class NoteShown(
     var isPinned: Boolean = false
 ) {
     companion object {
-        private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-        private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/y")
+        private val timeFormatter: DateTimeFormatter = DateTimeFormatter
+            .ofLocalizedTime(FormatStyle.SHORT)
+            .withLocale(Locale.getDefault())
+        private val dateFormatter: DateTimeFormatter = DateTimeFormatter
+            .ofLocalizedDate(FormatStyle.SHORT)
+            .withLocale(Locale.getDefault())
     }
 
     val time: String
@@ -172,6 +178,14 @@ class HomeScreenViewModel : ViewModel() {
 
         _uiState.update { currentState ->
             currentState.copy(notes = tempNotes.toList())
+        }
+    }
+
+    fun deleteNote(position: Int) {
+        val tempNotes: MutableList<NoteShown> = _uiState.value.notes.toMutableList()
+        tempNotes.removeAt(index = position)
+        _uiState.update { currentState ->
+            currentState.copy(notes = tempNotes)
         }
     }
 }

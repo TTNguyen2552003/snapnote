@@ -2,9 +2,11 @@ package app.kotlin.snapnote.ui.views
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +46,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -74,6 +77,7 @@ import app.kotlin.snapnote.ui.theme.surfaceContainerDark
 import app.kotlin.snapnote.ui.theme.surfaceContainerHighestDark
 import app.kotlin.snapnote.ui.theme.surfaceContainerHighestLight
 import app.kotlin.snapnote.ui.theme.surfaceContainerLight
+import app.kotlin.snapnote.ui.theme.surfaceDark
 import app.kotlin.snapnote.ui.theme.surfaceLight
 import app.kotlin.snapnote.ui.theme.titleMedium
 import app.kotlin.snapnote.ui.theme.titleSmall
@@ -114,6 +118,14 @@ fun MainScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .drawBehind {
+                drawRect(
+                    color = if (isDarkMode)
+                        surfaceDark
+                    else
+                        surfaceLight
+                )
+            }
             .windowInsetsPadding(insets = WindowInsets.statusBars)
     ) {
         Spacer(modifier = Modifier.height(height = 8.dp))
@@ -170,457 +182,584 @@ fun MainScreen(
                 .uiState
                 .collectAsState()
 
-            Box(modifier = Modifier.fillMaxSize()) {
-                val sortBy: String by remember {
-                    mutableStateOf(value = "none")
-                }
+            if (homeScreenUiState.value.notes.isNotEmpty()) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    val sortBy: String by remember {
+                        mutableStateOf(value = "none")
+                    }
 
-                @Composable
-                fun NoteListContainer() {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .padding(
-                                start = 20.dp,
-                                end = 20.dp
-                            ),
-                        verticalArrangement = Arrangement.spacedBy(space = 16.dp)
-                    ) {
-                        @Composable
-                        fun SearchBar() {
-                            Row(
-                                modifier = Modifier
-                                    .clip(shape = RoundedCornerShape(size = 8.dp))
-                                    .drawBehind {
-                                        drawRoundRect(
-                                            color = if (isDarkMode)
-                                                surfaceContainerDark
-                                            else
-                                                surfaceContainerLight,
-                                            cornerRadius = CornerRadius(x = 8.dp.toPx())
-                                        )
-                                    }
-                                    .fillMaxWidth()
-                                    .wrapContentHeight()
-                                    .padding(
-                                        start = 16.dp,
-                                        top = 8.dp,
-                                        bottom = 8.dp
-                                    )
-                                    .pointerInput(Unit) {
-                                        detectTapGestures(
-                                            onPress = {
-                                                navController.navigate(route = Destination.SearchingScreen.route)
-                                            }
-                                        )
-                                    },
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                @Composable
-                                fun Head() {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(space = 12.dp)
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.search_icon),
-                                            contentDescription = "search",
-                                            modifier = Modifier
-                                                .width(width = 24.dp)
-                                                .height(height = 24.dp),
-                                            tint = if (isDarkMode)
-                                                outlineDark
-                                            else
-                                                outlineLight
-                                        )
-
-                                        Text(
-                                            text = stringResource(id = R.string.place_holder_search_bar),
-                                            style = bodySmall.notScale(),
-                                            color = if (isDarkMode)
-                                                outlineDark.copy(alpha = 0.3f)
-                                            else
-                                                outlineLight.copy(alpha = 0.3f),
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                }
-                                Head()
-                            }
-                        }
-                        SearchBar()
-
-                        @Composable
-                        fun SortBy() {
-                            if (sortBy == "none") {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.sort_icon),
-                                    contentDescription = "sort button",
-                                    tint = if (isDarkMode)
-                                        outlineDark
-                                    else
-                                        outlineLight,
+                    @Composable
+                    fun NoteListContainer() {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .padding(
+                                    start = 20.dp,
+                                    end = 20.dp
+                                ),
+                            verticalArrangement = Arrangement.spacedBy(space = 16.dp)
+                        ) {
+                            @Composable
+                            fun SearchBar() {
+                                Row(
                                     modifier = Modifier
-                                        .width(width = 24.dp)
-                                        .height(height = 24.dp)
-                                        .align(alignment = Alignment.End)
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(shape = RoundedCornerShape(size = 4.dp))
+                                        .clip(shape = RoundedCornerShape(size = 8.dp))
                                         .drawBehind {
                                             drawRoundRect(
                                                 color = if (isDarkMode)
                                                     surfaceContainerDark
                                                 else
                                                     surfaceContainerLight,
-                                                cornerRadius = CornerRadius(x = 4.dp.toPx())
+                                                cornerRadius = CornerRadius(x = 8.dp.toPx())
                                             )
                                         }
+                                        .fillMaxWidth()
+                                        .wrapContentHeight()
                                         .padding(
-                                            top = 4.dp,
-                                            bottom = 4.dp,
-                                            start = 8.dp,
-                                            end = 8.dp
+                                            start = 16.dp,
+                                            top = 8.dp,
+                                            bottom = 8.dp
                                         )
-                                        .align(alignment = Alignment.End)
+                                        .pointerInput(Unit) {
+                                            detectTapGestures(
+                                                onPress = {
+                                                    navController.navigate(route = Destination.SearchingScreen.route)
+                                                }
+                                            )
+                                        },
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        text = sortBy,
-                                        style = labelSmall.notScale(),
-                                        color = if (isDarkMode)
-                                            onSurfaceDark
+                                    @Composable
+                                    fun Head() {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(space = 12.dp)
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.search_icon),
+                                                contentDescription = "search",
+                                                modifier = Modifier
+                                                    .width(width = 24.dp)
+                                                    .height(height = 24.dp),
+                                                tint = if (isDarkMode)
+                                                    outlineDark
+                                                else
+                                                    outlineLight
+                                            )
+
+                                            Text(
+                                                text = stringResource(id = R.string.place_holder_search_bar),
+                                                style = bodySmall.notScale(),
+                                                color = if (isDarkMode)
+                                                    outlineDark.copy(alpha = 0.3f)
+                                                else
+                                                    outlineLight.copy(alpha = 0.3f),
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }
+                                    Head()
+                                }
+                            }
+                            SearchBar()
+
+                            @Composable
+                            fun SortBy() {
+                                if (sortBy == "none") {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.sort_icon),
+                                        contentDescription = "sort button",
+                                        tint = if (isDarkMode)
+                                            outlineDark
                                         else
-                                            onSurfaceLight
+                                            outlineLight,
+                                        modifier = Modifier
+                                            .width(width = 24.dp)
+                                            .height(height = 24.dp)
+                                            .align(alignment = Alignment.End)
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(shape = RoundedCornerShape(size = 4.dp))
+                                            .drawBehind {
+                                                drawRoundRect(
+                                                    color = if (isDarkMode)
+                                                        surfaceContainerDark
+                                                    else
+                                                        surfaceContainerLight,
+                                                    cornerRadius = CornerRadius(x = 4.dp.toPx())
+                                                )
+                                            }
+                                            .padding(
+                                                top = 4.dp,
+                                                bottom = 4.dp,
+                                                start = 8.dp,
+                                                end = 8.dp
+                                            )
+                                            .align(alignment = Alignment.End)
+                                    ) {
+                                        Text(
+                                            text = sortBy,
+                                            style = labelSmall.notScale(),
+                                            color = if (isDarkMode)
+                                                onSurfaceDark
+                                            else
+                                                onSurfaceLight
+                                        )
+                                    }
+                                }
+                            }
+                            SortBy()
+
+                            @Composable
+                            fun Notes() {
+                                @Composable
+                                fun Note(
+                                    noteShown: NoteShown,
+                                    updateCompletionStatus: () -> Unit,
+                                    pinOrUnpinNote: () -> Unit,
+                                    deleteNote: () -> Unit
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .clip(shape = RoundedCornerShape(size = 8.dp))
+                                            .fillMaxWidth()
+                                            .wrapContentHeight()
+                                            .drawBehind {
+                                                drawRoundRect(
+                                                    color = if (noteShown.isDone) {
+                                                        if (isDarkMode)
+                                                            surfaceContainerHighestDark
+                                                        else
+                                                            surfaceContainerHighestLight
+                                                    } else {
+                                                        if (isDarkMode)
+                                                            surfaceContainerDark
+                                                        else
+                                                            surfaceContainerLight
+                                                    },
+                                                    cornerRadius = CornerRadius(x = 8.dp.toPx())
+                                                )
+                                            }
+                                            .padding(
+                                                top = 8.dp,
+                                                bottom = 8.dp,
+                                                start = 8.dp,
+                                                end = 12.dp
+                                            ),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(space = 4.dp)
+                                    ) {
+                                        @Composable
+                                        fun CheckBoxContainer() {
+                                            Box(
+                                                modifier = Modifier
+                                                    .wrapContentSize()
+                                                    .padding(all = 12.dp)
+                                                    .pointerInput(Unit) {
+                                                        detectTapGestures(
+                                                            onPress = {
+                                                                updateCompletionStatus()
+                                                            }
+                                                        )
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (!noteShown.isDone)
+                                                    Icon(
+                                                        painter = painterResource(id = R.drawable.checkbox_icon),
+                                                        contentDescription = "check box",
+                                                        modifier = Modifier
+                                                            .width(width = 24.dp)
+                                                            .height(height = 24.dp),
+                                                        tint = if (isDarkMode)
+                                                            primaryDark
+                                                        else
+                                                            primaryLight
+                                                    )
+                                                else
+                                                    Icon(
+                                                        painter = painterResource(id = R.drawable.checkbox_selected_icon),
+                                                        contentDescription = "check box",
+                                                        modifier = Modifier
+                                                            .width(width = 24.dp)
+                                                            .height(height = 24.dp),
+                                                        tint = if (isDarkMode)
+                                                            outlineVariantDark
+                                                        else
+                                                            outlineVariantLight
+                                                    )
+                                            }
+                                        }
+                                        CheckBoxContainer()
+
+                                        @Composable
+                                        fun Content() {
+                                            Column(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .wrapContentHeight(),
+                                                horizontalAlignment = Alignment.Start,
+                                                verticalArrangement = Arrangement.spacedBy(space = 8.dp)
+                                            ) {
+//                                            Title
+                                                Text(
+                                                    text = noteShown.title,
+                                                    style = titleSmall.notScale(),
+                                                    color = if (!noteShown.isDone) {
+                                                        if (isDarkMode)
+                                                            onSurfaceDark
+                                                        else
+                                                            onSurfaceLight
+                                                    } else {
+                                                        if (isDarkMode)
+                                                            outlineVariantDark
+                                                        else
+                                                            outlineVariantLight
+                                                    }
+                                                )
+
+//                                            Body
+                                                Text(
+                                                    text = noteShown.body,
+                                                    style = bodySmall.notScale(),
+                                                    color = if (!noteShown.isDone) {
+                                                        if (isDarkMode)
+                                                            onSurfaceDark
+                                                        else
+                                                            onSurfaceLight
+                                                    } else {
+                                                        if (isDarkMode)
+                                                            outlineVariantDark
+                                                        else
+                                                            outlineVariantLight
+                                                    },
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+
+                                                @Composable
+                                                fun Reminder() {
+                                                    Row(
+                                                        horizontalArrangement = Arrangement.spacedBy(
+                                                            space = 8.dp
+                                                        ),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Icon(
+                                                            painter = painterResource(id = R.drawable.reminder_icon),
+                                                            contentDescription = "reminder",
+                                                            modifier = Modifier
+                                                                .width(width = 16.dp)
+                                                                .height(height = 16.dp),
+                                                            tint = if (!noteShown.isDone) {
+                                                                if (isDarkMode)
+                                                                    onSurfaceDark
+                                                                else
+                                                                    onSurfaceLight
+                                                            } else {
+                                                                if (isDarkMode)
+                                                                    outlineVariantDark
+                                                                else
+                                                                    outlineVariantLight
+                                                            }
+                                                        )
+
+
+                                                        @Composable
+                                                        fun DateAndTime() {
+                                                            Row(
+                                                                horizontalArrangement = Arrangement.spacedBy(
+                                                                    space = 4.dp
+                                                                )
+                                                            ) {
+//                                                            Date
+                                                                Text(
+                                                                    text = noteShown.date,
+                                                                    style = labelSmall.notScale(),
+                                                                    color = if (!noteShown.isDone) {
+                                                                        if (isDarkMode)
+                                                                            onSurfaceDark
+                                                                        else
+                                                                            onSurfaceLight
+                                                                    } else {
+                                                                        if (isDarkMode)
+                                                                            outlineVariantDark
+                                                                        else
+                                                                            outlineVariantLight
+                                                                    }
+                                                                )
+
+//                                                            Time
+                                                                Text(
+                                                                    text = noteShown.time,
+                                                                    style = labelSmall.notScale(),
+                                                                    color = if (!noteShown.isDone) {
+                                                                        if (isDarkMode)
+                                                                            onSurfaceDark
+                                                                        else
+                                                                            onSurfaceLight
+                                                                    } else {
+                                                                        if (isDarkMode)
+                                                                            outlineVariantDark
+                                                                        else
+                                                                            outlineVariantLight
+                                                                    }
+                                                                )
+                                                            }
+                                                        }
+                                                        DateAndTime()
+                                                    }
+                                                }
+                                                Reminder()
+                                            }
+                                        }
+                                        Content()
+
+                                        @Composable
+                                        fun TrailingInteraction() {
+                                            Column(
+                                                modifier = Modifier.height(height = 68.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.SpaceBetween
+                                            ) {
+//                                            Pin icon
+                                                Icon(
+                                                    painter = painterResource(
+                                                        id = if (noteShown.isPinned)
+                                                            R.drawable.pin_filled_icon
+                                                        else
+                                                            R.drawable.pin_icon
+                                                    ),
+                                                    contentDescription = "pin note",
+                                                    modifier = Modifier
+                                                        .width(width = 16.dp)
+                                                        .height(16.dp)
+                                                        .pointerInput(Unit) {
+                                                            detectTapGestures(
+                                                                onPress = {
+                                                                    pinOrUnpinNote()
+                                                                }
+                                                            )
+                                                        },
+                                                    tint = if (isDarkMode)
+                                                        primaryDark
+                                                    else
+                                                        primaryLight
+                                                )
+
+                                                Icon(
+                                                    painter = painterResource(id = R.drawable.delete_icon),
+                                                    contentDescription = "delete note",
+                                                    modifier = Modifier
+                                                        .width(16.dp)
+                                                        .height(16.dp)
+                                                        .pointerInput(Unit) {
+                                                            detectTapGestures(
+                                                                onPress = {
+                                                                    deleteNote()
+                                                                }
+                                                            )
+                                                        },
+                                                    tint = if (isDarkMode)
+                                                        errorDark
+                                                    else
+                                                        errorLight
+                                                )
+                                            }
+                                        }
+                                        TrailingInteraction()
+                                    }
+                                }
+
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(bottom = 16.dp)
+                                        .animateContentSize(
+                                            animationSpec = tween(
+                                                durationMillis = 250,
+                                                easing = EaseOut
+                                            )
+                                        ),
+                                    contentPadding = PaddingValues(bottom = 16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(space = 16.dp)
+                                ) {
+                                    items(count = homeScreenUiState.value.notes.size) { index ->
+                                        Note(
+                                            noteShown = homeScreenUiState.value.notes[index],
+                                            updateCompletionStatus = {
+                                                homeScreenViewModel.updateCompletionStatus(position = index)
+                                            },
+                                            pinOrUnpinNote = {
+                                                homeScreenViewModel.pinOrUnpin(position = index)
+                                            },
+                                            deleteNote = {
+                                                homeScreenViewModel.deleteNote(position = index)
+                                            }
+                                        )
+                                    }
+                                }
+
+                            }
+                            Notes()
+                        }
+                    }
+                    NoteListContainer()
+
+//                Add button
+                    Box(
+                        modifier = Modifier
+                            .padding(
+                                end = 32.dp,
+                                bottom = 32.dp
+                            )
+                            .width(width = 48.dp)
+                            .height(height = 48.dp)
+                            .shadow(
+                                elevation = 1.dp,
+                                shape = RoundedCornerShape(size = 8.dp)
+                            )
+                            .drawBehind {
+                                drawRoundRect(
+                                    color = if (isDarkMode)
+                                        primaryContainerDark
+                                    else
+                                        primaryContainerLight,
+                                    cornerRadius = CornerRadius(x = 8.dp.toPx())
+                                )
+                            }
+                            .align(alignment = Alignment.BottomEnd)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onPress = {
+                                        navController.navigate(route = Destination.CreateNoteScreen.route)
+                                    }
+                                )
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.add_icon),
+                            contentDescription = "add new note",
+                            modifier = Modifier
+                                .width(width = 20.dp)
+                                .height(20.dp),
+                            tint = if (isDarkMode)
+                                onPrimaryContainerDark
+                            else
+                                onPrimaryContainerLight
+                        )
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    @Composable
+                    fun EmptyHomeScreenContent() {
+                        Column(
+                            modifier = Modifier.wrapContentSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(space = 20.dp)
+                        ) {
+                            @Composable
+                            fun Status() {
+                                Column(
+                                    modifier = Modifier.wrapContentSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(space = 8.dp)
+                                ) {
+                                    Image(
+                                        painter = painterResource(
+                                            id = if (isDarkMode)
+                                                R.drawable.empty_note_figure_dark
+                                            else
+                                                R.drawable.empty_note_figure
+                                        ),
+                                        contentDescription = "empty note figure",
+                                        modifier = Modifier
+                                            .width(width = 80.dp)
+                                            .height(height = 80.dp),
+                                        contentScale = ContentScale.FillBounds,
+                                    )
+
+                                    Text(
+                                        text = stringResource(id = R.string.empty_status_sentence),
+                                        style = bodySmall.notScale(),
+                                        color = if (isDarkMode)
+                                            outlineVariantDark
+                                        else
+                                            outlineVariantLight
                                     )
                                 }
                             }
-                        }
-                        SortBy()
+                            Status()
 
-                        @Composable
-                        fun Notes() {
                             @Composable
-                            fun Note(
-                                noteShown: NoteShown,
-                                updateCompletionStatus: () -> Unit,
-                                pinOrUnpinNote: () -> Unit
-                            ) {
-                                Row(
+                            fun CtaButton() {
+                                var isPress: Boolean by remember {
+                                    mutableStateOf(value = false)
+                                }
+
+                                val buttonElevation: Dp by animateDpAsState(
+                                    targetValue = if (isPress)
+                                        0.dp
+                                    else
+                                        1.dp,
+                                    label = "button elevation interaction"
+                                )
+
+                                Box(
                                     modifier = Modifier
+                                        .wrapContentSize()
                                         .clip(shape = RoundedCornerShape(size = 8.dp))
-                                        .fillMaxWidth()
-                                        .wrapContentHeight()
+                                        .shadow(
+                                            elevation = buttonElevation,
+                                            shape = RoundedCornerShape(size = 8.dp)
+                                        )
                                         .drawBehind {
                                             drawRoundRect(
-                                                color = if (noteShown.isDone) {
-                                                    if (isDarkMode)
-                                                        surfaceContainerHighestDark
-                                                    else
-                                                        surfaceContainerHighestLight
-                                                } else {
-                                                    if (isDarkMode)
-                                                        surfaceContainerDark
-                                                    else
-                                                        surfaceContainerLight
-                                                },
+                                                color = if (isDarkMode)
+                                                    primaryContainerDark
+                                                else
+                                                    primaryContainerLight,
                                                 cornerRadius = CornerRadius(x = 8.dp.toPx())
                                             )
                                         }
                                         .padding(
                                             top = 8.dp,
                                             bottom = 8.dp,
-                                            start = 8.dp,
-                                            end = 12.dp
-                                        ),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(space = 4.dp)
+                                            start = 16.dp,
+                                            end = 16.dp
+                                        )
+                                        .pointerInput(Unit) {
+                                            detectTapGestures(
+                                                onPress = {
+                                                    isPress = true
+                                                    tryAwaitRelease()
+                                                    isPress = false
+                                                    navController.navigate(route = Destination.CreateNoteScreen.route)
+                                                }
+                                            )
+                                        }
                                 ) {
-                                    @Composable
-                                    fun CheckBoxContainer() {
-                                        Box(
-                                            modifier = Modifier
-                                                .wrapContentSize()
-                                                .padding(all = 12.dp)
-                                                .pointerInput(Unit) {
-                                                    detectTapGestures(
-                                                        onPress = {
-                                                            updateCompletionStatus()
-                                                        }
-                                                    )
-                                                },
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            if (!noteShown.isDone)
-                                                Icon(
-                                                    painter = painterResource(id = R.drawable.checkbox_icon),
-                                                    contentDescription = "check box",
-                                                    modifier = Modifier
-                                                        .width(width = 24.dp)
-                                                        .height(height = 24.dp),
-                                                    tint = if (isDarkMode)
-                                                        primaryDark
-                                                    else
-                                                        primaryLight
-                                                )
-                                            else
-                                                Icon(
-                                                    painter = painterResource(id = R.drawable.checkbox_selected_icon),
-                                                    contentDescription = "check box",
-                                                    modifier = Modifier
-                                                        .width(width = 24.dp)
-                                                        .height(height = 24.dp),
-                                                    tint = if (isDarkMode)
-                                                        outlineVariantDark
-                                                    else
-                                                        outlineVariantLight
-                                                )
-                                        }
-                                    }
-                                    CheckBoxContainer()
-
-                                    @Composable
-                                    fun Content() {
-                                        Column(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .wrapContentHeight(),
-                                            horizontalAlignment = Alignment.Start,
-                                            verticalArrangement = Arrangement.spacedBy(space = 8.dp)
-                                        ) {
-//                                            Title
-                                            Text(
-                                                text = noteShown.title,
-                                                style = titleSmall.notScale(),
-                                                color = if (!noteShown.isDone) {
-                                                    if (isDarkMode)
-                                                        onSurfaceDark
-                                                    else
-                                                        onSurfaceLight
-                                                } else {
-                                                    if (isDarkMode)
-                                                        outlineVariantDark
-                                                    else
-                                                        outlineVariantLight
-                                                }
-                                            )
-
-//                                            Body
-                                            Text(
-                                                text = noteShown.body,
-                                                style = bodySmall.notScale(),
-                                                color = if (!noteShown.isDone) {
-                                                    if (isDarkMode)
-                                                        onSurfaceDark
-                                                    else
-                                                        onSurfaceLight
-                                                } else {
-                                                    if (isDarkMode)
-                                                        outlineVariantDark
-                                                    else
-                                                        outlineVariantLight
-                                                },
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-
-                                            @Composable
-                                            fun Reminder() {
-                                                Row(
-                                                    horizontalArrangement = Arrangement.spacedBy(
-                                                        space = 8.dp
-                                                    ),
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Icon(
-                                                        painter = painterResource(id = R.drawable.reminder_icon),
-                                                        contentDescription = "reminder",
-                                                        modifier = Modifier
-                                                            .width(width = 16.dp)
-                                                            .height(height = 16.dp),
-                                                        tint = if (!noteShown.isDone) {
-                                                            if (isDarkMode)
-                                                                onSurfaceDark
-                                                            else
-                                                                onSurfaceLight
-                                                        } else {
-                                                            if (isDarkMode)
-                                                                outlineVariantDark
-                                                            else
-                                                                outlineVariantLight
-                                                        }
-                                                    )
-
-
-                                                    @Composable
-                                                    fun DateAndTime() {
-                                                        Row(
-                                                            horizontalArrangement = Arrangement.spacedBy(
-                                                                space = 4.dp
-                                                            )
-                                                        ) {
-//                                                            Date
-                                                            Text(
-                                                                text = noteShown.date,
-                                                                style = labelSmall.notScale(),
-                                                                color = if (!noteShown.isDone) {
-                                                                    if (isDarkMode)
-                                                                        onSurfaceDark
-                                                                    else
-                                                                        onSurfaceLight
-                                                                } else {
-                                                                    if (isDarkMode)
-                                                                        outlineVariantDark
-                                                                    else
-                                                                        outlineVariantLight
-                                                                }
-                                                            )
-
-//                                                            Time
-                                                            Text(
-                                                                text = noteShown.time,
-                                                                style = labelSmall.notScale(),
-                                                                color = if (!noteShown.isDone) {
-                                                                    if (isDarkMode)
-                                                                        onSurfaceDark
-                                                                    else
-                                                                        onSurfaceLight
-                                                                } else {
-                                                                    if (isDarkMode)
-                                                                        outlineVariantDark
-                                                                    else
-                                                                        outlineVariantLight
-                                                                }
-                                                            )
-                                                        }
-                                                    }
-                                                    DateAndTime()
-                                                }
-                                            }
-                                            Reminder()
-                                        }
-                                    }
-                                    Content()
-
-                                    @Composable
-                                    fun TrailingInteraction() {
-                                        Column(
-                                            modifier = Modifier.height(height = 68.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.SpaceBetween
-                                        ) {
-//                                            Pin icon
-                                            Icon(
-                                                painter = painterResource(
-                                                    id = if (noteShown.isPinned)
-                                                        R.drawable.pin_filled_icon
-                                                    else
-                                                        R.drawable.pin_icon
-                                                ),
-                                                contentDescription = "pin note",
-                                                modifier = Modifier
-                                                    .width(width = 16.dp)
-                                                    .height(16.dp)
-                                                    .pointerInput(Unit) {
-                                                        detectTapGestures(
-                                                            onPress = {
-                                                                pinOrUnpinNote()
-                                                            }
-                                                        )
-                                                    },
-                                                tint = if (isDarkMode)
-                                                    primaryDark
-                                                else
-                                                    primaryLight
-                                            )
-
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.delete_icon),
-                                                contentDescription = "delete note",
-                                                modifier = Modifier
-                                                    .width(16.dp)
-                                                    .height(16.dp),
-                                                tint = if (isDarkMode)
-                                                    errorDark
-                                                else
-                                                    errorLight
-                                            )
-                                        }
-                                    }
-                                    TrailingInteraction()
-                                }
-                            }
-
-                            LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(bottom = 16.dp),
-                                contentPadding = PaddingValues(bottom = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(space = 16.dp)
-                            ) {
-                                items(count = homeScreenUiState.value.notes.size) { index ->
-                                    Note(
-                                        noteShown = homeScreenUiState.value.notes[index],
-                                        updateCompletionStatus = {
-                                            homeScreenViewModel.updateCompletionStatus(position = index)
-                                        },
-                                        pinOrUnpinNote = {
-                                            homeScreenViewModel.pinOrUnpin(position = index)
-                                        }
+                                    Text(
+                                        text = stringResource(id = R.string.button_label_create),
+                                        style = labelSmall.notScale(),
+                                        color = if (isDarkMode)
+                                            onPrimaryContainerDark
+                                        else
+                                            onPrimaryContainerLight
                                     )
                                 }
                             }
-
+                            CtaButton()
                         }
-                        Notes()
                     }
-                }
-                NoteListContainer()
-
-//                Add button
-                Box(
-                    modifier = Modifier
-                        .padding(
-                            end = 32.dp,
-                            bottom = 32.dp
-                        )
-                        .width(width = 48.dp)
-                        .height(height = 48.dp)
-                        .shadow(
-                            elevation = 1.dp,
-                            shape = RoundedCornerShape(size = 8.dp)
-                        )
-                        .drawBehind {
-                            drawRoundRect(
-                                color = if (isDarkMode)
-                                    primaryContainerDark
-                                else
-                                    primaryContainerLight,
-                                cornerRadius = CornerRadius(x = 8.dp.toPx())
-                            )
-                        }
-                        .align(alignment = Alignment.BottomEnd)
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onPress = {
-                                    navController.navigate(route = Destination.CreateNoteScreen.route)
-                                }
-                            )
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.add_icon),
-                        contentDescription = "add new note",
-                        modifier = Modifier
-                            .width(width = 20.dp)
-                            .height(20.dp),
-                        tint = if (isDarkMode)
-                            onPrimaryContainerDark
-                        else
-                            onPrimaryContainerLight
-                    )
+                    EmptyHomeScreenContent()
                 }
             }
         }

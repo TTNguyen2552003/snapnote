@@ -1,45 +1,53 @@
 package app.kotlin.snapnote.ui.views
 
-import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
-import androidx.compose.animation.graphics.res.animatedVectorResource
-import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
-import androidx.compose.animation.graphics.vector.AnimatedImageVector
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import app.kotlin.snapnote.R
-import kotlinx.coroutines.delay
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
-@OptIn(ExperimentalAnimationGraphicsApi::class)
 @Composable
 fun DraftScreen() {
-    Box(
+    Column(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val image: AnimatedImageVector = AnimatedImageVector
-            .animatedVectorResource(id = R.drawable.rotate_gear)
-
-        var atEnd: Boolean by remember { mutableStateOf(value = false) }
-
-        LaunchedEffect(Unit) {
-            while (true) {
-                atEnd = !atEnd
-                delay(timeMillis = 4000L)
-            }
+        var showDatePickerDialog: Boolean by remember {
+            mutableStateOf(value = false)
+        }
+        Button(onClick = { showDatePickerDialog = true }) {
+            Text(text = "Click me")
         }
 
-        Image(
-            painter = rememberAnimatedVectorPainter(image, atEnd),
-            contentDescription = "Timer"
-        )
+
+        val timeFormatter: DateTimeFormatter = DateTimeFormatter
+            .ofLocalizedTime(FormatStyle.SHORT)
+            .withLocale(Locale.getDefault())
+
+        var time: LocalTime by remember {
+            mutableStateOf(value = LocalTime.now())
+        }
+
+        val updateDate: (LocalTime) -> Unit = { localTime ->
+            time = localTime
+        }
+        if (showDatePickerDialog) {
+            TimePickerModel(
+                onDismissRequest = { showDatePickerDialog = false },
+                onConfirm = updateDate
+            )
+        }
+
+        Text(text = timeFormatter.format(time))
     }
 }

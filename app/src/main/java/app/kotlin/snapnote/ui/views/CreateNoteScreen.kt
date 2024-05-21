@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -29,8 +30,21 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DatePickerState
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.TimePickerLayoutType
+import androidx.compose.material3.TimePickerState
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -54,9 +68,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import app.kotlin.snapnote.R
@@ -69,20 +86,42 @@ import app.kotlin.snapnote.ui.theme.labelSmall
 import app.kotlin.snapnote.ui.theme.notScale
 import app.kotlin.snapnote.ui.theme.onPrimaryContainerDark
 import app.kotlin.snapnote.ui.theme.onPrimaryContainerLight
+import app.kotlin.snapnote.ui.theme.onPrimaryDark
+import app.kotlin.snapnote.ui.theme.onPrimaryLight
 import app.kotlin.snapnote.ui.theme.onSurfaceDark
 import app.kotlin.snapnote.ui.theme.onSurfaceLight
+import app.kotlin.snapnote.ui.theme.onSurfaceVariantDark
+import app.kotlin.snapnote.ui.theme.onSurfaceVariantLight
+import app.kotlin.snapnote.ui.theme.onTertiaryContainerDark
+import app.kotlin.snapnote.ui.theme.onTertiaryContainerLight
 import app.kotlin.snapnote.ui.theme.outlineDark
 import app.kotlin.snapnote.ui.theme.outlineLight
 import app.kotlin.snapnote.ui.theme.primaryContainerDark
 import app.kotlin.snapnote.ui.theme.primaryContainerLight
+import app.kotlin.snapnote.ui.theme.primaryDark
+import app.kotlin.snapnote.ui.theme.primaryLight
+import app.kotlin.snapnote.ui.theme.robotoFamily
 import app.kotlin.snapnote.ui.theme.surfaceContainerDark
+import app.kotlin.snapnote.ui.theme.surfaceContainerHighDark
+import app.kotlin.snapnote.ui.theme.surfaceContainerHighLight
 import app.kotlin.snapnote.ui.theme.surfaceContainerLight
 import app.kotlin.snapnote.ui.theme.surfaceContainerLowDark
 import app.kotlin.snapnote.ui.theme.surfaceContainerLowLight
 import app.kotlin.snapnote.ui.theme.surfaceDark
 import app.kotlin.snapnote.ui.theme.surfaceLight
+import app.kotlin.snapnote.ui.theme.surfaceVariantDark
+import app.kotlin.snapnote.ui.theme.surfaceVariantLight
+import app.kotlin.snapnote.ui.theme.tertiaryContainerDark
+import app.kotlin.snapnote.ui.theme.tertiaryContainerLight
 import app.kotlin.snapnote.ui.viewmodels.CreateNoteScreenUiState
 import app.kotlin.snapnote.ui.viewmodels.CreateNoteScreenViewModel
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
 @Composable
 fun CreateNoteScreen(
@@ -253,13 +292,76 @@ fun CreateNoteScreen(
                         horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-//                        Folder
-                        PickerChip(
-                            isDarkMode = isDarkMode,
-                            iconRes = R.drawable.folder_icon,
-                            iconContentDescription = "folder icon",
-                            label = createNoteScreenUiState.value.currentFolderName
-                        ) { /* TODO */ }
+
+
+                        @Composable
+                        fun Folder() {
+                            var isMenuFolderExpanded: Boolean by remember {
+                                mutableStateOf(value = false)
+                            }
+
+                            PickerChip(
+                                isDarkMode = isDarkMode,
+                                iconRes = R.drawable.folder_icon,
+                                iconContentDescription = "folder icon",
+                                label = createNoteScreenUiState.value.currentFolderName
+                            ) { isMenuFolderExpanded = true }
+
+                            DropdownMenu(
+                                expanded = isMenuFolderExpanded,
+                                onDismissRequest = { isMenuFolderExpanded = false },
+                                modifier = Modifier
+                                    .wrapContentSize()
+                                    .clip(shape = RoundedCornerShape(size = 8.dp))
+                                    .drawBehind {
+                                        drawRoundRect(
+                                            color = if (isDarkMode)
+                                                surfaceContainerDark
+                                            else
+                                                surfaceContainerLight,
+                                            cornerRadius = CornerRadius(x = 8.dp.toPx())
+                                        )
+                                    }
+                            ) {
+                                val folderNames: List<String> = listOf(
+                                    "Uncategorized",
+                                    "Personal Tasks",
+                                    "Professional Responsibilities"
+                                )
+
+                                folderNames.forEach {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = it,
+                                                style = labelSmall.notScale(),
+                                                color = if (isDarkMode)
+                                                    onSurfaceDark
+                                                else
+                                                    onSurfaceLight,
+                                                modifier = Modifier
+                                                    .wrapContentSize()
+                                                    .padding(
+                                                        top = 4.dp,
+                                                        bottom = 4.dp,
+                                                        start = 8.dp,
+                                                        end = 40.dp
+                                                    )
+                                            )
+                                        },
+                                        onClick = {
+                                            isMenuFolderExpanded = false
+                                            createNoteScreenViewModel.updateCurrentNewFolderName(
+                                                newFolderName = it
+                                            )
+                                        },
+                                        contentPadding = PaddingValues(all = 0.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Folder()
+
 
 //                        Create a new folder button
                         Icon(
@@ -529,23 +631,105 @@ fun CreateNoteScreen(
                         @Composable
                         fun ReminderPicker() {
                             Row(horizontalArrangement = Arrangement.spacedBy(space = 8.dp)) {
-//                                Date picker
-                                PickerChip(
-                                    isDarkMode = isDarkMode,
-                                    iconRes = R.drawable.date_icon,
-                                    iconContentDescription = "date picker",
-                                    label = "Date",
-                                    onClick = {/* TODO */ }
-                                )
 
-//                                Time picker
-                                PickerChip(
-                                    isDarkMode = isDarkMode,
-                                    iconRes = R.drawable.time_icon,
-                                    iconContentDescription = "time picker",
-                                    label = "Time",
-                                    onClick = {/* TODO */ }
-                                )
+                                @Composable
+                                fun DatePickerChip() {
+                                    var isDatePickerModelOpen: Boolean by remember {
+                                        mutableStateOf(value = false)
+                                    }
+
+                                    PickerChip(
+                                        isDarkMode = isDarkMode,
+                                        iconRes = R.drawable.date_icon,
+                                        iconContentDescription = "date picker",
+                                        label = createNoteScreenUiState.value.date,
+                                        onClick = { isDatePickerModelOpen = true }
+                                    )
+
+                                    val onConfirm: (Long) -> Unit = { dateInMilSec ->
+                                        val instant: Instant = Instant.ofEpochMilli(dateInMilSec)
+                                        val zoneId: ZoneId = ZoneId.systemDefault()
+                                        val localDate: LocalDate =
+                                            instant.atZone(zoneId).toLocalDate()
+
+                                        val dateFormatter: DateTimeFormatter = DateTimeFormatter
+                                            .ofLocalizedDate(FormatStyle.SHORT)
+                                            .withLocale(Locale.getDefault())
+
+                                        val newDate: String =
+                                            dateFormatter.format(localDate)
+                                        createNoteScreenViewModel.updateDate(newDate = newDate)
+                                    }
+
+                                    if (isDatePickerModelOpen) {
+                                        DatePickerModel(
+                                            onDismissRequest = { isDatePickerModelOpen = false },
+                                            onConfirm = onConfirm
+                                        )
+                                    }
+                                }
+                                DatePickerChip()
+
+                                @Composable
+                                fun TimePickerChip() {
+                                    var isTimePickerModelOpen: Boolean by remember {
+                                        mutableStateOf(value = false)
+                                    }
+
+                                    PickerChip(
+                                        isDarkMode = isDarkMode,
+                                        iconRes = R.drawable.time_icon,
+                                        iconContentDescription = "time picker",
+                                        label = createNoteScreenUiState.value.time,
+                                        onClick = { isTimePickerModelOpen = true }
+                                    )
+
+                                    val onConfirm: (LocalTime) -> Unit = { localTime ->
+                                        val dateFormatter: DateTimeFormatter = DateTimeFormatter
+                                            .ofLocalizedDate(FormatStyle.SHORT)
+                                            .withLocale(Locale.getDefault())
+
+                                        val timeFormatter: DateTimeFormatter = DateTimeFormatter
+                                            .ofLocalizedTime(FormatStyle.SHORT)
+                                            .withLocale(Locale.getDefault())
+
+                                        if (createNoteScreenUiState.value.date != "Date") {
+                                            val parsedDate: LocalDate = LocalDate.parse(
+                                                createNoteScreenUiState.value.date,
+                                                dateFormatter
+                                            )
+
+                                            val currentDate: LocalDate = LocalDate.now()
+
+                                            val currentTime: LocalTime = LocalTime.now()
+                                            if (parsedDate.isEqual(currentDate) && !localTime.isAfter(currentTime)) {
+                                                createNoteScreenViewModel.updateTime(
+                                                    newTime = timeFormatter.format(
+                                                        LocalTime.now().plusMinutes(1)
+                                                    )
+                                                )
+                                            } else {
+                                                createNoteScreenViewModel.updateTime(
+                                                    newTime = timeFormatter.format(
+                                                        localTime
+                                                    )
+                                                )
+                                            }
+                                        } else {
+                                            createNoteScreenViewModel.updateTime(
+                                                newTime = timeFormatter.format(localTime)
+                                            )
+                                        }
+                                    }
+
+                                    if (isTimePickerModelOpen) {
+                                        TimePickerModel(
+                                            onDismissRequest = { isTimePickerModelOpen = false },
+                                            onConfirm = onConfirm
+                                        )
+                                    }
+                                }
+                                TimePickerChip()
                             }
                         }
                         ReminderPicker()
@@ -925,5 +1109,359 @@ fun RenameFolderDialog(
             surfaceDark
         else
             surfaceLight
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickerModel(
+    isDarkMode: Boolean = false,
+    onDismissRequest: () -> Unit,
+    onConfirm: (Long) -> Unit
+) {
+    val datePickerState: DatePickerState = rememberDatePickerState()
+    DatePickerDialog(
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            Text(
+                text = stringResource(id = R.string.button_label_ok),
+                style = labelLarge.notScale(),
+                color = if (
+                    compareSelectedDateWithCurrentDate(
+                        selectedDateMillis = datePickerState.selectedDateMillis ?: 0L
+                    ) >= 0
+                ) {
+                    if (isDarkMode)
+                        primaryDark
+                    else
+                        primaryLight
+                } else {
+                    if (isDarkMode)
+                        onSurfaceDark.copy(alpha = 0.38f)
+                    else
+                        onSurfaceLight.copy(alpha = 0.38f)
+                },
+                modifier = Modifier
+                    .padding(
+                        top = 12.dp,
+                        bottom = 12.dp,
+                        start = 12.dp,
+                        end = 24.dp
+                    )
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                if (
+                                    compareSelectedDateWithCurrentDate(
+                                        selectedDateMillis = datePickerState.selectedDateMillis
+                                            ?: 0L
+                                    ) >= 0
+                                ) {
+                                    onConfirm(datePickerState.selectedDateMillis ?: 0L)
+                                    onDismissRequest()
+                                } else {
+                                }
+                            }
+                        )
+                    }
+            )
+        },
+        dismissButton = {
+            Text(
+                text = stringResource(id = R.string.button_label_cancel),
+                style = labelLarge.notScale(),
+                color = if (isDarkMode)
+                    primaryDark
+                else
+                    primaryLight,
+                modifier = Modifier
+                    .padding(all = 12.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                onDismissRequest()
+                            }
+                        )
+                    }
+            )
+        },
+        content = {
+            DatePicker(
+                state = datePickerState,
+                showModeToggle = false,
+                colors = DatePickerDefaults.colors(
+                    containerColor = if (isDarkMode)
+                        surfaceDark
+                    else
+                        surfaceLight,
+                    titleContentColor = if (isDarkMode)
+                        onSurfaceVariantDark
+                    else
+                        onSurfaceVariantLight,
+                    headlineContentColor = if (isDarkMode)
+                        onSurfaceVariantDark
+                    else
+                        onSurfaceVariantLight,
+                    weekdayContentColor = if (isDarkMode)
+                        onSurfaceDark
+                    else
+                        onSurfaceLight,
+                    subheadContentColor = if (isDarkMode)
+                        onSurfaceVariantDark
+                    else
+                        onSurfaceVariantLight,
+                    yearContentColor = if (isDarkMode)
+                        onSurfaceVariantDark
+                    else
+                        onSurfaceVariantLight,
+                    currentYearContentColor = if (isDarkMode)
+                        primaryDark
+                    else
+                        primaryLight,
+                    selectedYearContentColor = if (isDarkMode)
+                        onPrimaryDark
+                    else
+                        onPrimaryLight,
+                    selectedYearContainerColor = if (isDarkMode)
+                        primaryDark
+                    else
+                        primaryLight,
+                    dayContentColor = if (isDarkMode)
+                        onSurfaceDark
+                    else
+                        onSurfaceLight,
+                    selectedDayContentColor = if (isDarkMode)
+                        onPrimaryDark
+                    else
+                        onPrimaryLight,
+                    selectedDayContainerColor = if (isDarkMode)
+                        primaryDark
+                    else
+                        primaryLight,
+                    todayContentColor = if (isDarkMode)
+                        primaryDark
+                    else
+                        primaryLight,
+                    todayDateBorderColor = if (isDarkMode)
+                        primaryDark
+                    else
+                        primaryLight
+                )
+            )
+        }
+    )
+}
+
+fun compareSelectedDateWithCurrentDate(selectedDateMillis: Long): Int {
+    val selectedDate: LocalDate = Instant
+        .ofEpochMilli(selectedDateMillis)
+        .atZone(ZoneId.systemDefault())
+        .toLocalDate()
+    val currentDate: LocalDate = LocalDate.now()
+    return selectedDate.compareTo(currentDate)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TimePickerModel(
+    isDarkMode: Boolean = false,
+    onDismissRequest: () -> Unit,
+    onConfirm: (LocalTime) -> Unit
+) {
+    val timePickerState: TimePickerState = rememberTimePickerState()
+
+    AlertDialog(
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        modifier = Modifier.wrapContentSize(),
+        content = {
+            Column(
+                modifier = Modifier
+                    .wrapContentSize()
+                    .clip(shape = RoundedCornerShape(size = 28.dp))
+                    .drawBehind {
+                        drawRoundRect(
+                            color = if (isDarkMode)
+                                surfaceContainerHighDark
+                            else
+                                surfaceContainerHighLight,
+                            cornerRadius = CornerRadius(x = 28.dp.toPx())
+                        )
+                    },
+                verticalArrangement = Arrangement.spacedBy(space = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+//                Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .padding(
+                            top = 24.dp,
+                            start = 24.dp,
+                            end = 24.dp
+                        )
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.time_picker_title),
+                        style = TextStyle(
+                            fontFamily = robotoFamily,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp,
+                            letterSpacing = (0.5).sp
+                        ).notScale(),
+                        color = if (isDarkMode)
+                            onSurfaceVariantDark
+                        else
+                            onSurfaceVariantLight
+                    )
+                }
+
+                TimePicker(
+                    state = timePickerState,
+                    layoutType = TimePickerLayoutType.Vertical,
+                    colors = TimePickerDefaults.colors(
+                        clockDialColor = if (isDarkMode)
+                            surfaceVariantDark
+                        else
+                            surfaceContainerLight,
+                        clockDialSelectedContentColor = if (isDarkMode)
+                            onPrimaryDark
+                        else
+                            onPrimaryLight,
+                        clockDialUnselectedContentColor = if (isDarkMode)
+                            onSurfaceDark
+                        else
+                            onSurfaceLight,
+                        selectorColor = if (isDarkMode)
+                            primaryDark
+                        else
+                            primaryLight,
+                        containerColor = if (isDarkMode)
+                            surfaceDark
+                        else
+                            surfaceLight,
+                        periodSelectorSelectedContentColor = if (isDarkMode)
+                            onTertiaryContainerDark
+                        else
+                            onTertiaryContainerLight,
+                        periodSelectorBorderColor = if (isDarkMode)
+                            outlineDark
+                        else
+                            outlineLight,
+                        periodSelectorUnselectedContainerColor = Color.Transparent,
+                        periodSelectorSelectedContainerColor = if (isDarkMode)
+                            tertiaryContainerDark
+                        else
+                            tertiaryContainerLight,
+                        periodSelectorUnselectedContentColor = if (isDarkMode)
+                            onSurfaceDark
+                        else
+                            onSurfaceLight,
+                        timeSelectorSelectedContainerColor = if (isDarkMode)
+                            primaryContainerDark
+                        else
+                            primaryContainerLight,
+                        timeSelectorUnselectedContentColor = if (isDarkMode)
+                            onSurfaceDark
+                        else
+                            onSurfaceLight,
+                        timeSelectorSelectedContentColor = if (isDarkMode)
+                            onPrimaryContainerDark
+                        else
+                            onPrimaryContainerLight,
+                        timeSelectorUnselectedContainerColor = if (isDarkMode)
+                            surfaceVariantDark
+                        else
+                            surfaceVariantLight
+                    )
+                )
+
+                @Composable
+                fun ActionContainer() {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(
+                                bottom = 20.dp,
+                                start = 12.dp,
+                                end = 24.dp
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        @Composable
+                        fun Actions() {
+                            Row(horizontalArrangement = Arrangement.spacedBy(space = 8.dp)) {
+//                                Dismiss button
+                                Text(
+                                    text = stringResource(id = R.string.button_label_cancel),
+                                    style = TextStyle(
+                                        fontFamily = robotoFamily,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 14.sp,
+                                        lineHeight = 20.sp,
+                                        letterSpacing = (0.1).sp,
+                                    ).notScale(),
+                                    color = if (isDarkMode)
+                                        primaryDark
+                                    else
+                                        primaryLight,
+                                    modifier = Modifier
+                                        .wrapContentSize()
+                                        .padding(all = 12.dp)
+                                        .pointerInput(Unit) {
+                                            detectTapGestures(
+                                                onPress = {
+                                                    onDismissRequest()
+                                                }
+                                            )
+                                        }
+                                )
+
+//                                Confirm button
+                                Text(
+                                    text = stringResource(id = R.string.button_label_ok),
+                                    style = TextStyle(
+                                        fontFamily = robotoFamily,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 14.sp,
+                                        lineHeight = 20.sp,
+                                        letterSpacing = (0.1).sp,
+                                    ).notScale(),
+                                    color = if (isDarkMode)
+                                        primaryDark
+                                    else
+                                        primaryLight,
+                                    modifier = Modifier
+                                        .wrapContentSize()
+                                        .padding(all = 12.dp)
+                                        .pointerInput(Unit) {
+                                            detectTapGestures(
+                                                onPress = {
+                                                    onDismissRequest()
+                                                    onConfirm(
+                                                        LocalTime.of(
+                                                            timePickerState.hour,
+                                                            timePickerState.minute
+                                                        )
+                                                    )
+                                                }
+                                            )
+                                        }
+                                )
+                            }
+                        }
+                        Actions()
+                    }
+                }
+                ActionContainer()
+            }
+        }
     )
 }

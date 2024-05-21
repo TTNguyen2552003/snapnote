@@ -19,4 +19,8 @@
     <string name="about_app_version">Version: 1.0.0</string>
     <string name="about_app_contact">Contact me: trantrongnguyen2552003@gmail.com</string>
     <string name="about_app_donate_channel">Donate PayPal: trantrongnguyen2552003@gmail.com</string>
+    <string name="empty_status_sentence">There is no note at now</string>
+    <string name="button_label_create">Create</string>
+    <string name="button_label_ok">Ok</string>
+    <string name="time_picker_title">Select time</string>
 </resources>

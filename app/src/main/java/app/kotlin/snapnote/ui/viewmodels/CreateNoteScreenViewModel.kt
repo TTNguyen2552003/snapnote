@@ -1,6 +1,7 @@
 package app.kotlin.snapnote.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
+import app.kotlin.snapnote.ui.views.MAX_BODY_LENGTH
 import app.kotlin.snapnote.ui.views.MAX_TITLE_LENGTH
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,6 +12,8 @@ data class CreateNoteScreenUiState(
     val currentFolderName: String = "Uncategorized",
     val title: String = "",
     val body: String = "",
+    val date: String = "Date",
+    val time: String = "Time",
     val isReminderSet: Boolean = false
 )
 
@@ -37,10 +40,10 @@ class CreateNoteScreenViewModel : ViewModel() {
     fun updateBody(newBody: String) {
         _uiState.update { currentState ->
             currentState.copy(
-                body = if (newBody.length > MAX_TITLE_LENGTH)
+                body = if (newBody.length > MAX_BODY_LENGTH)
                     newBody.substring(
                         startIndex = 0,
-                        endIndex = MAX_TITLE_LENGTH
+                        endIndex = MAX_BODY_LENGTH
                     )
                 else newBody
             )
@@ -58,6 +61,18 @@ class CreateNoteScreenViewModel : ViewModel() {
             currentState.copy(
                 isReminderSet = !currentState.isReminderSet
             )
+        }
+    }
+
+    fun updateDate(newDate: String) {
+        _uiState.update { currentState ->
+            currentState.copy(date = newDate)
+        }
+    }
+
+    fun updateTime(newTime: String) {
+        _uiState.update { currentState ->
+            currentState.copy(time = newTime)
         }
     }
 }
