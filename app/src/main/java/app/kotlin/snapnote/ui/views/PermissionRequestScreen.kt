@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
@@ -142,7 +143,7 @@ fun PermissionRequestScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(space = 12.dp)
                     ) {
-//                        Permission request sentence
+//                        Permission requestPermission sentence
                         Text(
                             text = stringResource(id = R.string.permission_request_sentence),
                             style = bodySmall.notScale(),
@@ -153,6 +154,7 @@ fun PermissionRequestScreen(
                                 onSurfaceLight
                         )
 
+                        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
                         @Composable
                         fun Button() {
                             var isPress: Boolean by remember { mutableStateOf(value = false) }
@@ -177,26 +179,40 @@ fun PermissionRequestScreen(
                                 mutableStateOf(value = false)
                             }
 
-                            val requestAgain: () -> Unit = {
+                            val requestPermission: () -> Unit = {
                                 notificationPermissionState.launchPermissionRequest()
                             }
 
                             val context: Context = LocalContext.current
+
                             val goToSetting: () -> Unit = {
-                                val intent = Intent(Settings.ACTION_ALL_APPS_NOTIFICATION_SETTINGS)
+                                val intent: Intent =
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                                        Intent(Settings.ACTION_ALL_APPS_NOTIFICATION_SETTINGS)
+                                    else
+                                        Intent(Settings.ACTION_SETTINGS)
                                 context.startActivity(intent)
                             }
+
                             val onDismissRequest: () -> Unit = {
                                 showRequestDialog = false
                             }
-                            if (!notificationPermissionState.status.isGranted && showRequestDialog) {
+
+                            if ((notificationPermissionState.status.shouldShowRationale
+                                        || !(
+                                        notificationPermissionState.status.shouldShowRationale
+                                                && notificationPermissionState.status.isGranted)
+                                        )
+                                && showRequestDialog
+                            ) {
                                 HandlePermissionConflict(
                                     notificationPermissionState = notificationPermissionState,
-                                    requestAgain = requestAgain,
+                                    requestPermission = requestPermission,
                                     goToSetting = goToSetting,
                                     onDismissRequest = onDismissRequest
                                 )
                             }
+
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -227,7 +243,11 @@ fun PermissionRequestScreen(
                                                 if (notificationPermissionState.status.isGranted)
                                                     navController.navigate(route = Destination.MainScreen.route)
                                                 else {
-                                                    showRequestDialog = true
+                                                    run {
+                                                        requestPermission()
+                                                        delay(timeMillis = 500L)
+                                                        showRequestDialog = true
+                                                    }
                                                 }
                                             }
                                         )
@@ -288,7 +308,7 @@ fun PermissionRequestScreen(
 fun HandlePermissionConflict(
     isDarkMode: Boolean = false,
     notificationPermissionState: PermissionState,
-    requestAgain: () -> Unit,
+    requestPermission: () -> Unit,
     goToSetting: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
@@ -310,7 +330,8 @@ fun HandlePermissionConflict(
                         onPress = {
                             if (notificationPermissionState.status.shouldShowRationale) {
                                 onDismissRequest()
-                                requestAgain()
+                                requestPermission()
+                                delay(timeMillis = 500L)
                             } else {
                                 onDismissRequest()
                                 goToSetting()

@@ -1,5 +1,7 @@
 package app.kotlin.snapnote.ui.views
 
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -27,6 +29,8 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,6 +51,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -56,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import app.kotlin.snapnote.R
+import app.kotlin.snapnote.data.models.NoteUiModel
 import app.kotlin.snapnote.ui.theme.bodySmall
 import app.kotlin.snapnote.ui.theme.errorDark
 import app.kotlin.snapnote.ui.theme.errorLight
@@ -79,11 +85,12 @@ import app.kotlin.snapnote.ui.theme.surfaceContainerHighestLight
 import app.kotlin.snapnote.ui.theme.surfaceContainerLight
 import app.kotlin.snapnote.ui.theme.surfaceDark
 import app.kotlin.snapnote.ui.theme.surfaceLight
+import app.kotlin.snapnote.ui.theme.titleLarge
 import app.kotlin.snapnote.ui.theme.titleMedium
 import app.kotlin.snapnote.ui.theme.titleSmall
 import app.kotlin.snapnote.ui.viewmodels.HomeScreenUiState
 import app.kotlin.snapnote.ui.viewmodels.HomeScreenViewModel
-import app.kotlin.snapnote.ui.viewmodels.NoteShown
+
 
 data class MainScreenDestination(
     val index: Int,
@@ -97,6 +104,11 @@ fun MainScreen(
     isDarkMode: Boolean = false,
     navController: NavController
 ) {
+    val activity = (LocalContext.current as? Activity)
+    BackHandler {
+        activity?.finish()
+    }
+
     var selectedMainScreenDestination: Int by remember {
         mutableIntStateOf(value = 0)
     }
@@ -177,16 +189,18 @@ fun MainScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         @Composable
-        fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) {
+        fun HomeScreen(
+            homeScreenViewModel: HomeScreenViewModel = viewModel(
+                factory = HomeScreenViewModel.factory
+            )
+        ) {
+
             val homeScreenUiState: State<HomeScreenUiState> = homeScreenViewModel
                 .uiState
                 .collectAsState()
 
             if (homeScreenUiState.value.notes.isNotEmpty()) {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    val sortBy: String by remember {
-                        mutableStateOf(value = "none")
-                    }
 
                     @Composable
                     fun NoteListContainer() {
@@ -223,7 +237,9 @@ fun MainScreen(
                                         .pointerInput(Unit) {
                                             detectTapGestures(
                                                 onPress = {
-                                                    navController.navigate(route = Destination.SearchingScreen.route)
+                                                    navController.navigate(
+                                                        route = Destination.SearchingScreen.route
+                                                    )
                                                 }
                                             )
                                         },
@@ -264,59 +280,126 @@ fun MainScreen(
                             SearchBar()
 
                             @Composable
-                            fun SortBy() {
-                                if (sortBy == "none") {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.sort_icon),
-                                        contentDescription = "sort button",
-                                        tint = if (isDarkMode)
-                                            outlineDark
-                                        else
-                                            outlineLight,
+                            fun SortByChip() {
+                                var isSortByChipExpanded: Boolean by remember {
+                                    mutableStateOf(value = false)
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .wrapContentSize()
+                                        .align(alignment = Alignment.End)
+                                ) {
+                                    if (homeScreenUiState.value.sortBy == "none") {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.sort_icon),
+                                            contentDescription = "sort button",
+                                            tint = if (isDarkMode)
+                                                outlineDark
+                                            else
+                                                outlineLight,
+                                            modifier = Modifier
+                                                .width(width = 24.dp)
+                                                .height(height = 24.dp)
+                                                .pointerInput(Unit) {
+                                                    detectTapGestures(
+                                                        onPress = {
+                                                            isSortByChipExpanded = true
+                                                        }
+                                                    )
+                                                }
+                                        )
+                                    } else {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(shape = RoundedCornerShape(size = 4.dp))
+                                                .drawBehind {
+                                                    drawRoundRect(
+                                                        color = if (isDarkMode)
+                                                            surfaceContainerDark
+                                                        else
+                                                            surfaceContainerLight,
+                                                        cornerRadius = CornerRadius(x = 4.dp.toPx())
+                                                    )
+                                                }
+                                                .padding(
+                                                    top = 4.dp,
+                                                    bottom = 4.dp,
+                                                    start = 8.dp,
+                                                    end = 8.dp
+                                                )
+                                                .pointerInput(Unit) {
+                                                    detectTapGestures(
+                                                        onPress = {
+                                                            isSortByChipExpanded = true
+                                                        }
+                                                    )
+                                                }
+                                        ) {
+                                            Text(
+                                                text = homeScreenUiState.value.sortBy,
+                                                style = labelSmall.notScale(),
+                                                color = if (isDarkMode)
+                                                    onSurfaceDark
+                                                else
+                                                    onSurfaceLight
+                                            )
+                                        }
+                                    }
+
+                                    DropdownMenu(
+                                        expanded = isSortByChipExpanded,
+                                        onDismissRequest = { isSortByChipExpanded = false },
                                         modifier = Modifier
-                                            .width(width = 24.dp)
-                                            .height(height = 24.dp)
-                                            .align(alignment = Alignment.End)
-                                    )
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(shape = RoundedCornerShape(size = 4.dp))
+                                            .wrapContentSize()
+                                            .clip(shape = RoundedCornerShape(size = 8.dp))
                                             .drawBehind {
                                                 drawRoundRect(
                                                     color = if (isDarkMode)
                                                         surfaceContainerDark
                                                     else
                                                         surfaceContainerLight,
-                                                    cornerRadius = CornerRadius(x = 4.dp.toPx())
+                                                    cornerRadius = CornerRadius(x = 8.dp.toPx())
                                                 )
                                             }
-                                            .padding(
-                                                top = 4.dp,
-                                                bottom = 4.dp,
-                                                start = 8.dp,
-                                                end = 8.dp
-                                            )
-                                            .align(alignment = Alignment.End)
                                     ) {
-                                        Text(
-                                            text = sortBy,
-                                            style = labelSmall.notScale(),
-                                            color = if (isDarkMode)
-                                                onSurfaceDark
-                                            else
-                                                onSurfaceLight
-                                        )
+                                        homeScreenViewModel.sortingType.forEach {
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(
+                                                        text = it,
+                                                        style = labelSmall.notScale(),
+                                                        color = if (isDarkMode)
+                                                            onSurfaceDark
+                                                        else
+                                                            onSurfaceLight
+                                                    )
+                                                },
+                                                onClick = {
+                                                    isSortByChipExpanded = false
+                                                    homeScreenViewModel.changeSortType(sortBy = it)
+                                                },
+                                                contentPadding = PaddingValues(all = 0.dp),
+                                                modifier = Modifier
+                                                    .wrapContentSize()
+                                                    .padding(
+                                                        top = 4.dp,
+                                                        bottom = 4.dp,
+                                                        start = 8.dp,
+                                                        end = 40.dp
+                                                    )
+                                            )
+                                        }
                                     }
                                 }
                             }
-                            SortBy()
+                            SortByChip()
 
                             @Composable
                             fun Notes() {
                                 @Composable
                                 fun Note(
-                                    noteShown: NoteShown,
+                                    note: NoteUiModel,
                                     updateCompletionStatus: () -> Unit,
                                     pinOrUnpinNote: () -> Unit,
                                     deleteNote: () -> Unit
@@ -328,7 +411,7 @@ fun MainScreen(
                                             .wrapContentHeight()
                                             .drawBehind {
                                                 drawRoundRect(
-                                                    color = if (noteShown.isDone) {
+                                                    color = if (note.isDone) {
                                                         if (isDarkMode)
                                                             surfaceContainerHighestDark
                                                         else
@@ -366,7 +449,7 @@ fun MainScreen(
                                                     },
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                if (!noteShown.isDone)
+                                                if (!note.isDone)
                                                     Icon(
                                                         painter = painterResource(id = R.drawable.checkbox_icon),
                                                         contentDescription = "check box",
@@ -405,9 +488,9 @@ fun MainScreen(
                                             ) {
 //                                            Title
                                                 Text(
-                                                    text = noteShown.title,
+                                                    text = note.title + " " + note.originalIndex.toString(),
                                                     style = titleSmall.notScale(),
-                                                    color = if (!noteShown.isDone) {
+                                                    color = if (!note.isDone) {
                                                         if (isDarkMode)
                                                             onSurfaceDark
                                                         else
@@ -422,9 +505,9 @@ fun MainScreen(
 
 //                                            Body
                                                 Text(
-                                                    text = noteShown.body,
+                                                    text = note.body,
                                                     style = bodySmall.notScale(),
-                                                    color = if (!noteShown.isDone) {
+                                                    color = if (!note.isDone) {
                                                         if (isDarkMode)
                                                             onSurfaceDark
                                                         else
@@ -453,7 +536,7 @@ fun MainScreen(
                                                             modifier = Modifier
                                                                 .width(width = 16.dp)
                                                                 .height(height = 16.dp),
-                                                            tint = if (!noteShown.isDone) {
+                                                            tint = if (!note.isDone) {
                                                                 if (isDarkMode)
                                                                     onSurfaceDark
                                                                 else
@@ -476,9 +559,9 @@ fun MainScreen(
                                                             ) {
 //                                                            Date
                                                                 Text(
-                                                                    text = noteShown.date,
+                                                                    text = note.date,
                                                                     style = labelSmall.notScale(),
-                                                                    color = if (!noteShown.isDone) {
+                                                                    color = if (!note.isDone) {
                                                                         if (isDarkMode)
                                                                             onSurfaceDark
                                                                         else
@@ -493,9 +576,9 @@ fun MainScreen(
 
 //                                                            Time
                                                                 Text(
-                                                                    text = noteShown.time,
+                                                                    text = note.time,
                                                                     style = labelSmall.notScale(),
-                                                                    color = if (!noteShown.isDone) {
+                                                                    color = if (!note.isDone) {
                                                                         if (isDarkMode)
                                                                             onSurfaceDark
                                                                         else
@@ -527,7 +610,7 @@ fun MainScreen(
 //                                            Pin icon
                                                 Icon(
                                                     painter = painterResource(
-                                                        id = if (noteShown.isPinned)
+                                                        id = if (note.isPinned)
                                                             R.drawable.pin_filled_icon
                                                         else
                                                             R.drawable.pin_icon
@@ -586,22 +669,102 @@ fun MainScreen(
                                     contentPadding = PaddingValues(bottom = 16.dp),
                                     verticalArrangement = Arrangement.spacedBy(space = 16.dp)
                                 ) {
-                                    items(count = homeScreenUiState.value.notes.size) { index ->
-                                        Note(
-                                            noteShown = homeScreenUiState.value.notes[index],
-                                            updateCompletionStatus = {
-                                                homeScreenViewModel.updateCompletionStatus(position = index)
-                                            },
-                                            pinOrUnpinNote = {
-                                                homeScreenViewModel.pinOrUnpin(position = index)
-                                            },
-                                            deleteNote = {
-                                                homeScreenViewModel.deleteNote(position = index)
+                                    if (homeScreenUiState.value.sortBy != homeScreenViewModel.sortingType[2]) {
+                                        items(count = homeScreenUiState.value.notes.size) { index ->
+                                            Note(
+                                                note = homeScreenUiState.value.notes[index],
+                                                updateCompletionStatus = {
+                                                    homeScreenViewModel.updateCompletionStatus(
+                                                        id = homeScreenUiState.value.notes[index].originalIndex
+                                                    )
+                                                },
+                                                pinOrUnpinNote = {
+                                                    homeScreenViewModel.pinOrUnpin(
+                                                        id = homeScreenUiState
+                                                            .value
+                                                            .notes[index]
+                                                            .originalIndex
+                                                    )
+                                                },
+                                                deleteNote = {
+                                                    homeScreenViewModel.deleteNote(
+                                                        id = homeScreenUiState
+                                                            .value
+                                                            .notes[index]
+                                                            .originalIndex
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    } else {
+                                        @Composable
+                                        fun Folder(
+                                            folderName: String,
+                                            notes: List<NoteUiModel>
+                                        ) {
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .wrapContentHeight(),
+                                                horizontalAlignment = Alignment.Start,
+                                                verticalArrangement = Arrangement.spacedBy(space = 16.dp)
+                                            ) {
+//                                                Folder name
+                                                Text(
+                                                    text = folderName,
+                                                    style = titleLarge.notScale(),
+                                                    color = if (isDarkMode)
+                                                        onSurfaceDark
+                                                    else
+                                                        onSurfaceLight
+                                                )
+
+                                                @Composable
+                                                fun Notes() {
+                                                    Column(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .wrapContentHeight(),
+                                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                                        verticalArrangement = Arrangement.spacedBy(
+                                                            space = 16.dp
+                                                        )
+                                                    ) {
+                                                        notes.forEach {
+                                                            Note(
+                                                                note = it,
+                                                                updateCompletionStatus = {
+                                                                    homeScreenViewModel.updateCompletionStatus(
+                                                                        id = it.originalIndex
+                                                                    )
+                                                                },
+                                                                pinOrUnpinNote = {
+                                                                    homeScreenViewModel.pinOrUnpin(
+                                                                        id = it.originalIndex
+                                                                    )
+                                                                },
+                                                                deleteNote = {
+                                                                    homeScreenViewModel.deleteNote(
+                                                                        id = it.originalIndex
+                                                                    )
+                                                                }
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                                Notes()
                                             }
-                                        )
+                                        }
+                                        item {
+                                            homeScreenUiState.value.groupByFolder.forEach {
+                                                Folder(
+                                                    folderName = it.key,
+                                                    notes = it.value
+                                                )
+                                            }
+                                        }
                                     }
                                 }
-
                             }
                             Notes()
                         }
@@ -634,7 +797,9 @@ fun MainScreen(
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onPress = {
-                                        navController.navigate(route = Destination.CreateNoteScreen.route)
+                                        navController.navigate(
+                                            route = Destination.CreateNoteScreen.route
+                                        )
                                     }
                                 )
                             },

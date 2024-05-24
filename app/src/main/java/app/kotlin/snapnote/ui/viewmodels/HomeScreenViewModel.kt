@@ -1,191 +1,160 @@
 package app.kotlin.snapnote.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import app.kotlin.snapnote.SnapnoteApplication
+import app.kotlin.snapnote.data.Note
+import app.kotlin.snapnote.data.SnapnoteRepository
+import app.kotlin.snapnote.data.models.NoteUiModel
+import app.kotlin.snapnote.data.models.noteToNoteUiModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
-
-data class NoteShown(
-    val originalIndex: Int,
-    val isDone: Boolean = false,
-    var title: String = "Unknown title",
-    val body: String = "This is a sample note. To make it very long, I will add \"very long very long very long\"",
-    private val originalDate: LocalDate = LocalDate.now(),
-    private val originalTime: LocalTime = LocalTime.now()
-        .plusMinutes(1)
-        .withSecond(0)
-        .withNano(0),
-    var isPinned: Boolean = false
-) {
-    companion object {
-        private val timeFormatter: DateTimeFormatter = DateTimeFormatter
-            .ofLocalizedTime(FormatStyle.SHORT)
-            .withLocale(Locale.getDefault())
-        private val dateFormatter: DateTimeFormatter = DateTimeFormatter
-            .ofLocalizedDate(FormatStyle.SHORT)
-            .withLocale(Locale.getDefault())
-    }
-
-    val time: String
-        get() = originalTime.format(timeFormatter)
-
-    val date: String
-        get() = originalDate.format(dateFormatter)
-}
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 data class HomeScreenUiState(
-    val notes: List<NoteShown> = listOf()
+    val notes: List<NoteUiModel> = emptyList(),
+    val sortBy: String = "none",
+    //
+    val groupByFolder: Map<String, List<NoteUiModel>> = mapOf()
 )
 
-class HomeScreenViewModel : ViewModel() {
+class HomeScreenViewModel(
+    private val snapnoteRepository: SnapnoteRepository
+) : ViewModel() {
     private val _uiState: MutableStateFlow<HomeScreenUiState> =
         MutableStateFlow(value = HomeScreenUiState())
     val uiState: StateFlow<HomeScreenUiState> = _uiState.asStateFlow()
 
-    private val dumpData: List<NoteShown> = listOf(
-        NoteShown(
-            isDone = false,
-            title = "Shopping List",
-            body = "Buy milk, eggs, and bread.",
-            originalDate = LocalDate.of(2024, 5, 17),
-            originalTime = LocalTime.of(9, 0),
-            isPinned = false,
-            originalIndex = 0
-        ),
-        NoteShown(
-            isDone = true,
-            title = "Workout Plan",
-            body = "Run 5km and do 30 minutes of strength training.",
-            originalDate = LocalDate.of(2024, 5, 16),
-            originalTime = LocalTime.of(7, 30),
-            isPinned = false,
-            originalIndex = 1
-        ),
-        NoteShown(
-            isDone = false,
-            title = "Project Meeting",
-            body = "Discuss project milestones and deliverables.",
-            originalDate = LocalDate.of(2024, 5, 18),
-            originalTime = LocalTime.of(14, 0),
-            isPinned = false,
-            originalIndex = 2
-        ),
-        NoteShown(
-            isDone = true,
-            title = "Doctor's Appointment",
-            body = "Annual health check-up at the clinic.",
-            originalDate = LocalDate.of(2024, 5, 15),
-            originalTime = LocalTime.of(10, 15),
-            isPinned = false,
-            originalIndex = 3
-        ),
-        NoteShown(
-            isDone = false,
-            title = "Dinner with Friends",
-            body = "Meet at the new Italian restaurant.",
-            originalDate = LocalDate.of(2024, 5, 20),
-            originalTime = LocalTime.of(19, 0),
-            isPinned = false,
-            originalIndex = 4
-        ),
-        NoteShown(
-            isDone = false,
-            title = "Read Book",
-            body = "Finish reading 'Kotlin for Beginners'.",
-            originalDate = LocalDate.of(2024, 5, 21),
-            originalTime = LocalTime.of(16, 0),
-            isPinned = false,
-            originalIndex = 5
-        ),
-        NoteShown(
-            isDone = true,
-            title = "Grocery Shopping",
-            body = "Buy vegetables, fruits, and snacks.",
-            originalDate = LocalDate.of(2024, 5, 14),
-            originalTime = LocalTime.of(11, 0),
-            isPinned = false,
-            originalIndex = 6
-        ),
-        NoteShown(
-            isDone = false,
-            title = "Team Presentation",
-            body = "Prepare slides for the upcoming presentation.",
-            originalDate = LocalDate.of(2024, 5, 19),
-            originalTime = LocalTime.of(13, 0),
-            isPinned = false,
-            originalIndex = 7
-        ),
-        NoteShown(
-            isDone = true,
-            title = "House Cleaning",
-            body = "Clean the living room and kitchen.",
-            originalDate = LocalDate.of(2024, 5, 13),
-            originalTime = LocalTime.of(15, 0),
-            isPinned = false,
-            originalIndex = 8
-        )
+    init {
+        getAllNotes()
+    }
+
+    val sortingType: List<String> = mutableListOf(
+        "none",
+        "a-z",
+        "folder-name",
+        "completion"
     )
 
-    init {
+    fun changeSortType(sortBy: String) {
         _uiState.update { currentState ->
-            currentState.copy(notes = dumpData)
+            currentState.copy(sortBy = sortBy)
         }
+        getAllNotes()
     }
 
-    private fun updateElementNote(position: Int, newNote: NoteShown) {
-        val tempNotes: MutableList<NoteShown> = _uiState.value.notes.toMutableList()
-        tempNotes[position] = newNote
-        _uiState.update { currentState ->
-            currentState.copy(
-                notes = tempNotes.toList()
-            )
-        }
-    }
 
-    fun updateCompletionStatus(position: Int) {
-        val currentNote: NoteShown = _uiState.value.notes[position]
-        val updatedNote: NoteShown = currentNote.copy(isDone = !currentNote.isDone)
+    private fun getAllNotes() {
+        val currentSortingType: String = _uiState.value.sortBy
 
-        updateElementNote(
-            position = position,
-            newNote = updatedNote
-        )
-    }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val tempNotes: List<NoteUiModel>
+                if (currentSortingType == sortingType[0]) {
+                    tempNotes = snapnoteRepository
+                        .getAllNotes()
+                        .first()
+                        .map { noteToNoteUiModel(note = it) }
 
-    fun pinOrUnpin(position: Int) {
-        val tempNotes: MutableList<NoteShown> = _uiState.value.notes.toMutableList()
-        if (!tempNotes[position].isPinned) {
-            tempNotes.forEachIndexed { index, noteShown ->
-                noteShown.isPinned = (index == position)
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            notes = tempNotes,
+                            groupByFolder = emptyMap()
+                        )
+                    }
+                } else if (currentSortingType == sortingType[1]) {
+                    tempNotes = snapnoteRepository
+                        .getAllNotesSortedByTitle()
+                        .first()
+                        .map { noteToNoteUiModel(note = it) }
+
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            notes = tempNotes,
+                            groupByFolder = emptyMap()
+                        )
+                    }
+                } else if (currentSortingType == sortingType[3]) {
+                    tempNotes = snapnoteRepository
+                        .getAllNotesSortedByCompletion()
+                        .first()
+                        .map { noteToNoteUiModel(note = it) }
+
+                    _uiState.update { currentState ->
+                        currentState.copy(notes = tempNotes)
+                    }
+                } else {
+                    val tempGroupByFolder: Map<String, List<NoteUiModel>> = snapnoteRepository
+                        .getAllNotes()
+                        .first()
+                        .map { noteToNoteUiModel(note = it) }
+                        .groupBy { it.folderName }
+
+                    _uiState.update { currentState ->
+                        currentState.copy(groupByFolder = tempGroupByFolder)
+                    }
+                }
             }
-            val pinnedNote: NoteShown = tempNotes.removeAt(index = position)
-            tempNotes.add(
-                index = 0,
-                element = pinnedNote
-            )
-        } else {
-            tempNotes[position].isPinned = false
-            tempNotes.sortBy {
-                it.originalIndex
-            }
-        }
-
-        _uiState.update { currentState ->
-            currentState.copy(notes = tempNotes.toList())
         }
     }
 
-    fun deleteNote(position: Int) {
-        val tempNotes: MutableList<NoteShown> = _uiState.value.notes.toMutableList()
-        tempNotes.removeAt(index = position)
-        _uiState.update { currentState ->
-            currentState.copy(notes = tempNotes)
+    fun updateCompletionStatus(id: Int) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                snapnoteRepository.updateCompletion(id = id)
+            }
+            getAllNotes()
+        }
+    }
+
+
+    fun pinOrUnpin(id: Int) {
+        viewModelScope.launch {
+            runBlocking {
+                withContext(Dispatchers.IO) {
+                    val tempNote: Note = snapnoteRepository
+                        .getNoteById(id = id)
+                        .first()
+                    if (tempNote.isPinned)
+                        snapnoteRepository.unpinNote()
+                    else
+                        snapnoteRepository.pinNote(id = id)
+                }
+            }
+            getAllNotes()
+        }
+    }
+
+    fun deleteNote(id: Int) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                snapnoteRepository.deleteNote(id = id)
+            }
+            getAllNotes()
+        }
+    }
+
+    companion object {
+        val factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application: SnapnoteApplication =
+                    (this[APPLICATION_KEY] as SnapnoteApplication)
+                val snapnoteRepository: SnapnoteRepository =
+                    application.appContainer.snapnoteRepository
+                HomeScreenViewModel(
+                    snapnoteRepository = snapnoteRepository
+                )
+            }
         }
     }
 }

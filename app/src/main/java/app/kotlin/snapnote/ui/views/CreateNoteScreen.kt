@@ -127,7 +127,7 @@ import java.util.Locale
 fun CreateNoteScreen(
     isDarkMode: Boolean = false,
     navController: NavController,
-    createNoteScreenViewModel: CreateNoteScreenViewModel = viewModel()
+    createNoteScreenViewModel: CreateNoteScreenViewModel = viewModel(factory = CreateNoteScreenViewModel.factory)
 ) {
     val createNoteScreenUiState: State<CreateNoteScreenUiState> =
         createNoteScreenViewModel.uiState.collectAsState()
@@ -238,7 +238,14 @@ fun CreateNoteScreen(
                                         isPress = true
                                         tryAwaitRelease()
                                         isPress = false
-                                        /* TODO */
+                                        createNoteScreenViewModel.saveNote()
+                                        navController.navigate(
+                                            route = Destination.MainScreen.route
+                                        ) {
+                                            popUpTo(route = Destination.CreateNoteScreen.route) {
+                                                inclusive = true
+                                            }
+                                        }
                                     }
                                 )
                             }
@@ -305,7 +312,10 @@ fun CreateNoteScreen(
                                 iconRes = R.drawable.folder_icon,
                                 iconContentDescription = "folder icon",
                                 label = createNoteScreenUiState.value.currentFolderName
-                            ) { isMenuFolderExpanded = true }
+                            ) {
+                                if (createNoteScreenViewModel.folders.isNotEmpty())
+                                    isMenuFolderExpanded = true
+                            }
 
                             DropdownMenu(
                                 expanded = isMenuFolderExpanded,
@@ -323,13 +333,7 @@ fun CreateNoteScreen(
                                         )
                                     }
                             ) {
-                                val folderNames: List<String> = listOf(
-                                    "Uncategorized",
-                                    "Personal Tasks",
-                                    "Professional Responsibilities"
-                                )
-
-                                folderNames.forEach {
+                                createNoteScreenViewModel.folders.forEach {
                                     DropdownMenuItem(
                                         text = {
                                             Text(
@@ -338,15 +342,7 @@ fun CreateNoteScreen(
                                                 color = if (isDarkMode)
                                                     onSurfaceDark
                                                 else
-                                                    onSurfaceLight,
-                                                modifier = Modifier
-                                                    .wrapContentSize()
-                                                    .padding(
-                                                        top = 4.dp,
-                                                        bottom = 4.dp,
-                                                        start = 8.dp,
-                                                        end = 40.dp
-                                                    )
+                                                    onSurfaceLight
                                             )
                                         },
                                         onClick = {
@@ -355,7 +351,15 @@ fun CreateNoteScreen(
                                                 newFolderName = it
                                             )
                                         },
-                                        contentPadding = PaddingValues(all = 0.dp)
+                                        contentPadding = PaddingValues(all = 0.dp),
+                                        modifier = Modifier
+                                            .wrapContentSize()
+                                            .padding(
+                                                top = 4.dp,
+                                                bottom = 4.dp,
+                                                start = 8.dp,
+                                                end = 40.dp
+                                            )
                                     )
                                 }
                             }
@@ -702,7 +706,10 @@ fun CreateNoteScreen(
                                             val currentDate: LocalDate = LocalDate.now()
 
                                             val currentTime: LocalTime = LocalTime.now()
-                                            if (parsedDate.isEqual(currentDate) && !localTime.isAfter(currentTime)) {
+                                            if (parsedDate.isEqual(currentDate) && !localTime.isAfter(
+                                                    currentTime
+                                                )
+                                            ) {
                                                 createNoteScreenViewModel.updateTime(
                                                     newTime = timeFormatter.format(
                                                         LocalTime.now().plusMinutes(1)

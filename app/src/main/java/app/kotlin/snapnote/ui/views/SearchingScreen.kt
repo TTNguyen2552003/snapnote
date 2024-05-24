@@ -26,10 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -45,13 +42,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import app.kotlin.snapnote.R
+import app.kotlin.snapnote.data.models.NoteUiModel
 import app.kotlin.snapnote.ui.theme.bodySmall
 import app.kotlin.snapnote.ui.theme.errorDark
 import app.kotlin.snapnote.ui.theme.errorLight
@@ -71,7 +68,6 @@ import app.kotlin.snapnote.ui.theme.surfaceContainerHighestLight
 import app.kotlin.snapnote.ui.theme.surfaceContainerLight
 import app.kotlin.snapnote.ui.theme.titleSmall
 import app.kotlin.snapnote.ui.viewmodels.Highlights
-import app.kotlin.snapnote.ui.viewmodels.NoteShown
 import app.kotlin.snapnote.ui.viewmodels.SearchingScreenUiState
 import app.kotlin.snapnote.ui.viewmodels.SearchingScreenViewModel
 
@@ -80,7 +76,9 @@ import app.kotlin.snapnote.ui.viewmodels.SearchingScreenViewModel
 fun SearchingScreen(
     isDarkMode: Boolean = false,
     navController: NavController,
-    searchingScreenViewModel: SearchingScreenViewModel = viewModel()
+    searchingScreenViewModel: SearchingScreenViewModel = viewModel(
+        factory = SearchingScreenViewModel.factory
+    )
 ) {
     val searchingScreenUiState: State<SearchingScreenUiState> = searchingScreenViewModel
         .uiState
@@ -112,7 +110,6 @@ fun SearchingScreen(
             ) {
                 @Composable
                 fun SearchBar() {
-
                     Row(
                         modifier = Modifier
                             .wrapContentHeight()
@@ -156,8 +153,8 @@ fun SearchingScreen(
                                         outlineLight
                                 )
 
-                                val focusRequester:FocusRequester = remember { FocusRequester() }
-                                val focusManager:FocusManager = LocalFocusManager.current
+                                val focusRequester: FocusRequester = remember { FocusRequester() }
+                                val focusManager: FocusManager = LocalFocusManager.current
 
                                 LaunchedEffect(Unit) {
                                     focusRequester.requestFocus()
@@ -235,7 +232,15 @@ fun SearchingScreen(
                         outlineLight,
                     modifier = Modifier.pointerInput(Unit) {
                         detectTapGestures(
-                            onPress = { navController.popBackStack() }
+                            onPress = {
+                                navController.navigate(
+                                    route = Destination.MainScreen.route
+                                ) {
+                                    popUpTo(route = Destination.MainScreen.route) {
+                                        inclusive = false
+                                    }
+                                }
+                            }
                         )
                     }
                 )
@@ -261,15 +266,18 @@ fun SearchingScreen(
             ) {
                 @Composable
                 fun Note(
-                    noteShown: NoteShown,
-                    highlights: Highlights
+                    note: NoteUiModel,
+                    highlights: Highlights,
+                    updateCompletionStatus: () -> Unit,
+                    pinOrUnpinNote: () -> Unit,
+                    deleteNote: () -> Unit
                 ) {
                     Row(
                         modifier = Modifier
                             .clip(shape = RoundedCornerShape(size = 8.dp))
                             .drawBehind {
                                 drawRoundRect(
-                                    color = if (noteShown.isDone) {
+                                    color = if (note.isDone) {
                                         if (isDarkMode)
                                             surfaceContainerHighestDark
                                         else
@@ -301,13 +309,13 @@ fun SearchingScreen(
                                     .pointerInput(Unit) {
                                         detectTapGestures(
                                             onPress = {
-                                                /* TODO */
+                                                updateCompletionStatus()
                                             }
                                         )
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
-                                if (!noteShown.isDone)
+                                if (!note.isDone)
                                     Icon(
                                         painter = painterResource(id = R.drawable.checkbox_icon),
                                         contentDescription = "check box",
@@ -345,7 +353,7 @@ fun SearchingScreen(
                                 Text(
                                     text = highlights.title,
                                     style = titleSmall.notScale(),
-                                    color = if (!noteShown.isDone) {
+                                    color = if (!note.isDone) {
                                         if (isDarkMode)
                                             onSurfaceDark
                                         else
@@ -362,7 +370,7 @@ fun SearchingScreen(
                                 Text(
                                     text = highlights.body,
                                     style = bodySmall.notScale(),
-                                    color = if (!noteShown.isDone) {
+                                    color = if (!note.isDone) {
                                         if (isDarkMode)
                                             onSurfaceDark
                                         else
@@ -386,7 +394,7 @@ fun SearchingScreen(
                                             modifier = Modifier
                                                 .width(width = 16.dp)
                                                 .height(height = 16.dp),
-                                            tint = if (!noteShown.isDone) {
+                                            tint = if (!note.isDone) {
                                                 if (isDarkMode)
                                                     onSurfaceDark
                                                 else
@@ -408,9 +416,9 @@ fun SearchingScreen(
                                             ) {
 //                                                            Date
                                                 Text(
-                                                    text = noteShown.date,
+                                                    text = note.date,
                                                     style = labelSmall.notScale(),
-                                                    color = if (!noteShown.isDone) {
+                                                    color = if (!note.isDone) {
                                                         if (isDarkMode)
                                                             onSurfaceDark
                                                         else
@@ -425,9 +433,9 @@ fun SearchingScreen(
 
 //                                                            Time
                                                 Text(
-                                                    text = noteShown.time,
+                                                    text = note.time,
                                                     style = labelSmall.notScale(),
-                                                    color = if (!noteShown.isDone) {
+                                                    color = if (!note.isDone) {
                                                         if (isDarkMode)
                                                             onSurfaceDark
                                                         else
@@ -456,14 +464,10 @@ fun SearchingScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.SpaceBetween
                             ) {
-//                                            Pin icon
-                                var isPinned: Boolean by remember {
-                                    mutableStateOf(value = false)
-                                }
-
+//                                Pin icon
                                 Icon(
                                     painter = painterResource(
-                                        id = if (isPinned)
+                                        id = if (note.isPinned)
                                             R.drawable.pin_filled_icon
                                         else
                                             R.drawable.pin_icon
@@ -475,8 +479,7 @@ fun SearchingScreen(
                                         .pointerInput(Unit) {
                                             detectTapGestures(
                                                 onPress = {
-                                                    isPinned = !isPinned
-                                                    /* TODO */
+                                                    pinOrUnpinNote()
                                                 }
                                             )
                                         },
@@ -486,12 +489,16 @@ fun SearchingScreen(
                                         primaryLight
                                 )
 
+//                                Delete icon
                                 Icon(
                                     painter = painterResource(id = R.drawable.delete_icon),
                                     contentDescription = "delete note",
                                     modifier = Modifier
                                         .width(16.dp)
-                                        .height(16.dp),
+                                        .height(16.dp)
+                                        .pointerInput(Unit) {
+                                            deleteNote()
+                                        },
                                     tint = if (isDarkMode)
                                         errorDark
                                     else
@@ -503,11 +510,31 @@ fun SearchingScreen(
                     }
                 }
 
-                items(searchingScreenUiState.value.results.size) { index ->
-                    Note(
-                        noteShown = searchingScreenUiState.value.results[index],
-                        highlights = searchingScreenUiState.value.highlights[index]
-                    )
+                searchingScreenUiState.value.results.forEachIndexed { index, result ->
+                    item {
+                        Note(
+                            note = result,
+                            highlights = searchingScreenUiState.value.highlights[index],
+                            updateCompletionStatus = {
+                                searchingScreenViewModel
+                                    .updateCompletionStatus(
+                                        id = result.originalIndex
+                                    )
+                            },
+                            pinOrUnpinNote = {
+                                searchingScreenViewModel
+                                    .pinOrUnpin(
+                                        id = result.originalIndex
+                                    )
+                            },
+                            deleteNote = {
+                                searchingScreenViewModel
+                                    .deleteNote(
+                                        id = result.originalIndex
+                                    )
+                            }
+                        )
+                    }
                 }
             }
         }
