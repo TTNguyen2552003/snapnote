@@ -78,6 +78,10 @@ dependencies {
 //     Add Kotlin Extensions and Coroutines support for Room
     implementation("androidx.room:room-ktx:$roomVersion")
 
+//    Add Preferences DataStore
+    val preferenceDataStoreVersion = "1.1.1"
+    implementation("androidx.datastore:datastore-preferences:$preferenceDataStoreVersion")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

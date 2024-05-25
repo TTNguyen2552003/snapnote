@@ -239,13 +239,7 @@ fun CreateNoteScreen(
                                         tryAwaitRelease()
                                         isPress = false
                                         createNoteScreenViewModel.saveNote()
-                                        navController.navigate(
-                                            route = Destination.MainScreen.route
-                                        ) {
-                                            popUpTo(route = Destination.CreateNoteScreen.route) {
-                                                inclusive = true
-                                            }
-                                        }
+                                        navController.popBackStack()
                                     }
                                 )
                             }
@@ -461,7 +455,11 @@ fun CreateNoteScreen(
                                                 .show()
                                         }
                                     )
-                                }
+                                },
+                            tint = if (isDarkMode)
+                                onSurfaceDark
+                            else
+                                onSurfaceLight
                         )
                     }
                 }

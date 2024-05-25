@@ -56,6 +56,7 @@ import app.kotlin.snapnote.ui.theme.labelSmall
 import app.kotlin.snapnote.ui.theme.notScale
 import app.kotlin.snapnote.ui.theme.onSurfaceDark
 import app.kotlin.snapnote.ui.theme.onSurfaceLight
+import app.kotlin.snapnote.ui.theme.onSurfaceVariantLightMediumContrast
 import app.kotlin.snapnote.ui.theme.outlineDark
 import app.kotlin.snapnote.ui.theme.outlineLight
 import app.kotlin.snapnote.ui.theme.outlineVariantDark
@@ -66,6 +67,8 @@ import app.kotlin.snapnote.ui.theme.surfaceContainerDark
 import app.kotlin.snapnote.ui.theme.surfaceContainerHighestDark
 import app.kotlin.snapnote.ui.theme.surfaceContainerHighestLight
 import app.kotlin.snapnote.ui.theme.surfaceContainerLight
+import app.kotlin.snapnote.ui.theme.surfaceDark
+import app.kotlin.snapnote.ui.theme.surfaceLight
 import app.kotlin.snapnote.ui.theme.titleSmall
 import app.kotlin.snapnote.ui.viewmodels.Highlights
 import app.kotlin.snapnote.ui.viewmodels.SearchingScreenUiState
@@ -87,6 +90,14 @@ fun SearchingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .drawBehind {
+                drawRect(
+                    color = if (isDarkMode)
+                    surfaceDark
+                    else
+                    surfaceLight
+                )
+            }
             .windowInsetsPadding(insets = WindowInsets.statusBars),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -236,9 +247,7 @@ fun SearchingScreen(
                                 navController.navigate(
                                     route = Destination.MainScreen.route
                                 ) {
-                                    popUpTo(route = Destination.MainScreen.route) {
-                                        inclusive = false
-                                    }
+                                    navController.popBackStack()
                                 }
                             }
                         )

@@ -30,7 +30,7 @@ data class CreateNoteScreenUiState(
 )
 
 class CreateNoteScreenViewModel(
-    private val snapnoteRepository: SnapnoteRepository
+    private val snapnoteRepository: SnapnoteRepository,
 ) : ViewModel() {
     private val _uiState: MutableStateFlow<CreateNoteScreenUiState> =
         MutableStateFlow(CreateNoteScreenUiState())

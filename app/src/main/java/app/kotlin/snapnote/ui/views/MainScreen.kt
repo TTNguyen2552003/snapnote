@@ -3,11 +3,15 @@ package app.kotlin.snapnote.ui.views
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +38,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -102,7 +107,8 @@ data class MainScreenDestination(
 @Composable
 fun MainScreen(
     isDarkMode: Boolean = false,
-    navController: NavController
+    navController: NavController,
+    saveAndSwitchUiMode: () -> Unit
 ) {
     val activity = (LocalContext.current as? Activity)
     BackHandler {
@@ -127,6 +133,7 @@ fun MainScreen(
             description = "Info Tab"
         )
     )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -194,6 +201,9 @@ fun MainScreen(
                 factory = HomeScreenViewModel.factory
             )
         ) {
+            LaunchedEffect(Unit) {
+                homeScreenViewModel.clearState()
+            }
 
             val homeScreenUiState: State<HomeScreenUiState> = homeScreenViewModel
                 .uiState
@@ -975,12 +985,9 @@ fun MainScreen(
                         //                        Switch
                         @Composable
                         fun Switch() {
-                            var isSwitchOn: Boolean by remember {
-                                mutableStateOf(value = false)
-                            }
 
                             val xThumb: Dp by animateDpAsState(
-                                targetValue = if (isSwitchOn)
+                                targetValue = if (isDarkMode)
                                     28.dp
                                 else
                                     12.dp,
@@ -992,7 +999,7 @@ fun MainScreen(
                             )
 
                             val containerColor: Color by animateColorAsState(
-                                targetValue = if (isSwitchOn)
+                                targetValue = if (isDarkMode)
                                     primaryContainerDark
                                 else
                                     Color(color = 0x291D1B20),
@@ -1004,7 +1011,7 @@ fun MainScreen(
                             )
 
                             val thumbColor: Color by animateColorAsState(
-                                targetValue = if (isSwitchOn)
+                                targetValue = if (isDarkMode)
                                     onPrimaryContainerDark.copy(alpha = 0.5f)
                                 else
                                     surfaceLight.copy(alpha = 0.5f),
@@ -1037,7 +1044,7 @@ fun MainScreen(
                                     .pointerInput(Unit) {
                                         detectTapGestures(
                                             onPress = {
-                                                isSwitchOn = !isSwitchOn
+                                                saveAndSwitchUiMode()
                                             }
                                         )
                                     }
@@ -1109,9 +1116,32 @@ fun MainScreen(
             }
         }
 
-        if (selectedMainScreenDestination == mainScreenDestinations[0].index)
-            HomeScreen()
-        else if (selectedMainScreenDestination == mainScreenDestinations[1].index)
-            InfoScreen()
+        AnimatedContent(
+            targetState = selectedMainScreenDestination,
+            transitionSpec = {
+                slideIntoContainer(
+                    animationSpec = tween(durationMillis = 300, easing = EaseIn),
+                    towards = if (targetState == 0)
+                        AnimatedContentTransitionScope.SlideDirection.Right
+                    else
+                        AnimatedContentTransitionScope.SlideDirection.Left
+                ) togetherWith slideOutOfContainer(
+                    animationSpec = tween(durationMillis = 300, easing = EaseOut),
+                    towards = if (targetState == 0)
+                        AnimatedContentTransitionScope.SlideDirection.Right
+                    else
+                        AnimatedContentTransitionScope.SlideDirection.Left
+                )
+            }
+        ) { targetState ->
+            when (targetState) {
+                0 -> HomeScreen()
+                else -> InfoScreen()
+            }
+        }
+//        if (selectedMainScreenDestination == mainScreenDestinations[0].index)
+//            HomeScreen()
+//        else if (selectedMainScreenDestination == mainScreenDestinations[1].index)
+//            InfoScreen()
     }
 }

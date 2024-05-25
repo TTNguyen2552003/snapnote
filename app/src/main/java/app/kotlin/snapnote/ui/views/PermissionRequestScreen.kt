@@ -85,7 +85,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun PermissionRequestScreen(
     isDarkMode: Boolean = false,
-    navController: NavHostController
+    navController: NavHostController,
+    saveFirstUse: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -240,9 +241,10 @@ fun PermissionRequestScreen(
                                                 isPress = true
                                                 tryAwaitRelease()
                                                 isPress = false
-                                                if (notificationPermissionState.status.isGranted)
+                                                if (notificationPermissionState.status.isGranted) {
+                                                    saveFirstUse()
                                                     navController.navigate(route = Destination.MainScreen.route)
-                                                else {
+                                                } else {
                                                     run {
                                                         requestPermission()
                                                         delay(timeMillis = 500L)
@@ -316,10 +318,10 @@ fun HandlePermissionConflict(
         onDismissRequest = { onDismissRequest() },
         confirmButton = {
             Text(
-                text = if (notificationPermissionState.status.shouldShowRationale)
-                    "Ok"
+                text = if (!notificationPermissionState.status.shouldShowRationale && !notificationPermissionState.status.isGranted)
+                    "Setting"
                 else
-                    "Setting",
+                    "Ok",
                 style = labelLarge.notScale(),
                 color = if (isDarkMode)
                     primaryDark
@@ -396,7 +398,6 @@ fun HandlePermissionConflict(
                     )
                 }
             }
-
             val size: Dp = if (notificationPermissionState.status.shouldShowRationale)
                 64.dp
             else

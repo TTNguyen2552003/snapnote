@@ -40,7 +40,7 @@ data class SearchingScreenUiState(
 )
 
 class SearchingScreenViewModel(
-    private val snapnoteRepository: SnapnoteRepository
+    private val snapnoteRepository: SnapnoteRepository,
 ) : ViewModel() {
     private val _uiState: MutableStateFlow<SearchingScreenUiState> =
         MutableStateFlow(value = SearchingScreenUiState())

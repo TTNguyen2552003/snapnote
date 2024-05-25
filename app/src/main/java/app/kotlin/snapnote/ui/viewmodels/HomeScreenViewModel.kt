@@ -25,7 +25,7 @@ data class HomeScreenUiState(
     val notes: List<NoteUiModel> = emptyList(),
     val sortBy: String = "none",
     //
-    val groupByFolder: Map<String, List<NoteUiModel>> = mapOf()
+    val groupByFolder: Map<String, List<NoteUiModel>> = emptyMap()
 )
 
 class HomeScreenViewModel(
@@ -36,7 +36,7 @@ class HomeScreenViewModel(
     val uiState: StateFlow<HomeScreenUiState> = _uiState.asStateFlow()
 
     init {
-        getAllNotes()
+        clearState()
     }
 
     val sortingType: List<String> = mutableListOf(
@@ -55,12 +55,11 @@ class HomeScreenViewModel(
 
 
     private fun getAllNotes() {
-        val currentSortingType: String = _uiState.value.sortBy
-
         viewModelScope.launch {
+            val currentSortingType: String = _uiState.value.sortBy
             withContext(Dispatchers.IO) {
                 val tempNotes: List<NoteUiModel>
-                if (currentSortingType == sortingType[0]) {
+                if (currentSortingType == "none") {
                     tempNotes = snapnoteRepository
                         .getAllNotes()
                         .first()
@@ -72,7 +71,7 @@ class HomeScreenViewModel(
                             groupByFolder = emptyMap()
                         )
                     }
-                } else if (currentSortingType == sortingType[1]) {
+                } else if (currentSortingType == "a-z") {
                     tempNotes = snapnoteRepository
                         .getAllNotesSortedByTitle()
                         .first()
@@ -84,7 +83,7 @@ class HomeScreenViewModel(
                             groupByFolder = emptyMap()
                         )
                     }
-                } else if (currentSortingType == sortingType[3]) {
+                } else if (currentSortingType == "completion") {
                     tempNotes = snapnoteRepository
                         .getAllNotesSortedByCompletion()
                         .first()
@@ -144,13 +143,20 @@ class HomeScreenViewModel(
         }
     }
 
+    fun clearState() {
+        _uiState.value = HomeScreenUiState()
+        getAllNotes()
+    }
+
     companion object {
         val factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application: SnapnoteApplication =
                     (this[APPLICATION_KEY] as SnapnoteApplication)
+
                 val snapnoteRepository: SnapnoteRepository =
                     application.appContainer.snapnoteRepository
+
                 HomeScreenViewModel(
                     snapnoteRepository = snapnoteRepository
                 )
