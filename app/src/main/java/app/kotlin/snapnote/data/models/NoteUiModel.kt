@@ -13,7 +13,7 @@ data class NoteUiModel(
     val isDone: Boolean = false
 )
 
-fun noteToNoteUiModel(note: Note): NoteUiModel {
+fun convertNoteToNoteUiModel(note: Note): NoteUiModel {
     return NoteUiModel(
         originalIndex = note.id,
         folderName = note.folderName,

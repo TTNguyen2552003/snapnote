@@ -20,7 +20,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import app.kotlin.snapnote.ui.views.CreateNoteScreen
-import app.kotlin.snapnote.ui.views.Destination
+import app.kotlin.snapnote.Destination
 import app.kotlin.snapnote.ui.views.MainScreen
 import app.kotlin.snapnote.ui.views.PermissionRequestScreen
 import app.kotlin.snapnote.ui.views.SearchingScreen

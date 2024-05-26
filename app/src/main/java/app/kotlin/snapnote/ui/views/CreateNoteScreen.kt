@@ -76,6 +76,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import app.kotlin.snapnote.MAX_BODY_LENGTH
+import app.kotlin.snapnote.MAX_FOLDER_NAME_LENGTH
+import app.kotlin.snapnote.MAX_TITLE_LENGTH
 import app.kotlin.snapnote.R
 import app.kotlin.snapnote.ui.theme.bodyLarge
 import app.kotlin.snapnote.ui.theme.bodyMedium
@@ -280,6 +283,7 @@ fun CreateNoteScreen(
 
                 if (showDialog)
                     RenameFolderDialog(
+                        isDarkMode = isDarkMode,
                         onDismissRequest = { showDialog = false },
                         onSaveCurrentFolderName = {
                             createNoteScreenViewModel.updateCurrentNewFolderName(newFolderName = it)
@@ -318,12 +322,11 @@ fun CreateNoteScreen(
                                     .wrapContentSize()
                                     .clip(shape = RoundedCornerShape(size = 8.dp))
                                     .drawBehind {
-                                        drawRoundRect(
+                                        drawRect(
                                             color = if (isDarkMode)
                                                 surfaceContainerDark
                                             else
-                                                surfaceContainerLight,
-                                            cornerRadius = CornerRadius(x = 8.dp.toPx())
+                                                surfaceContainerLight
                                         )
                                     }
                             ) {
@@ -405,7 +408,7 @@ fun CreateNoteScreen(
                                 Text(
                                     text = "title: "
                                             + "${createNoteScreenUiState.value.title.length}"
-                                            + "/${MAX_TITLE_LENGTH}",
+                                            + "/$MAX_TITLE_LENGTH",
                                     style = bodySmall.notScale(),
                                     color = if (isDarkMode)
                                         onSurfaceDark
@@ -417,7 +420,7 @@ fun CreateNoteScreen(
                                 Text(
                                     text = "body: "
                                             + "${createNoteScreenUiState.value.body.length}"
-                                            + "/${MAX_BODY_LENGTH}",
+                                            + "/$MAX_BODY_LENGTH",
                                     style = bodySmall.notScale(),
                                     color = if (isDarkMode)
                                         onSurfaceDark
@@ -567,7 +570,11 @@ fun CreateNoteScreen(
                                                     createNoteScreenViewModel.updateTitle(newTitle = "")
                                                 }
                                             )
-                                        }
+                                        },
+                                    tint = if (isDarkMode)
+                                        outlineDark
+                                    else
+                                        outlineLight
                                 )
                         }
 
@@ -665,6 +672,7 @@ fun CreateNoteScreen(
 
                                     if (isDatePickerModelOpen) {
                                         DatePickerModel(
+                                            isDarkMode = isDarkMode,
                                             onDismissRequest = { isDatePickerModelOpen = false },
                                             onConfirm = onConfirm
                                         )
@@ -729,6 +737,7 @@ fun CreateNoteScreen(
 
                                     if (isTimePickerModelOpen) {
                                         TimePickerModel(
+                                            isDarkMode = isDarkMode,
                                             onDismissRequest = { isTimePickerModelOpen = false },
                                             onConfirm = onConfirm
                                         )
@@ -1125,6 +1134,7 @@ fun DatePickerModel(
     onConfirm: (Long) -> Unit
 ) {
     val datePickerState: DatePickerState = rememberDatePickerState()
+
     DatePickerDialog(
         onDismissRequest = {
             onDismissRequest()
@@ -1255,7 +1265,67 @@ fun DatePickerModel(
                         primaryLight
                 )
             )
-        }
+        },
+        modifier = Modifier
+            .background(color = Color.Transparent),
+        colors = DatePickerDefaults.colors(
+            containerColor = if (isDarkMode)
+                surfaceDark
+            else
+                surfaceLight,
+            titleContentColor = if (isDarkMode)
+                onSurfaceVariantDark
+            else
+                onSurfaceVariantLight,
+            headlineContentColor = if (isDarkMode)
+                onSurfaceVariantDark
+            else
+                onSurfaceVariantLight,
+            weekdayContentColor = if (isDarkMode)
+                onSurfaceDark
+            else
+                onSurfaceLight,
+            subheadContentColor = if (isDarkMode)
+                onSurfaceVariantDark
+            else
+                onSurfaceVariantLight,
+            yearContentColor = if (isDarkMode)
+                onSurfaceVariantDark
+            else
+                onSurfaceVariantLight,
+            currentYearContentColor = if (isDarkMode)
+                primaryDark
+            else
+                primaryLight,
+            selectedYearContentColor = if (isDarkMode)
+                onPrimaryDark
+            else
+                onPrimaryLight,
+            selectedYearContainerColor = if (isDarkMode)
+                primaryDark
+            else
+                primaryLight,
+            dayContentColor = if (isDarkMode)
+                onSurfaceDark
+            else
+                onSurfaceLight,
+            selectedDayContentColor = if (isDarkMode)
+                onPrimaryDark
+            else
+                onPrimaryLight,
+            selectedDayContainerColor = if (isDarkMode)
+                primaryDark
+            else
+                primaryLight,
+            todayContentColor = if (isDarkMode)
+                primaryDark
+            else
+                primaryLight,
+            todayDateBorderColor = if (isDarkMode)
+                primaryDark
+            else
+                primaryLight
+        )
     )
 }
 

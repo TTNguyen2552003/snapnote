@@ -28,41 +28,6 @@ val robotoFamily = FontFamily(
     Font(R.font.roboto_bold, FontWeight.Bold)
 )
 
-val displayLarge = TextStyle(
-    fontFamily = robotoFamily,
-    fontWeight = FontWeight.Normal,
-    fontSize = 57.sp,
-    lineHeight = 64.sp,
-    letterSpacing = (0.25).sp
-)
-
-val displayMedium = TextStyle(
-    fontFamily = robotoFamily,
-    fontWeight = FontWeight.Normal,
-    fontSize = 45.sp,
-    lineHeight = 52.sp
-)
-
-val displaySmall = TextStyle(
-    fontFamily = robotoFamily,
-    fontWeight = FontWeight.Normal,
-    fontSize = 36.sp,
-    lineHeight = 44.sp
-)
-
-val headlineLarge = TextStyle(
-    fontFamily = robotoFamily,
-    fontWeight = FontWeight.Normal,
-    fontSize = 32.sp,
-    lineHeight = 40.sp
-)
-
-val headlineMedium = TextStyle(
-    fontFamily = robotoFamily,
-    fontWeight = FontWeight.Normal,
-    fontSize = 28.sp,
-    lineHeight = 36.sp
-)
 
 val headlineSmall = TextStyle(
     fontFamily = robotoFamily,
@@ -117,13 +82,6 @@ val bodySmall = TextStyle(
     lineHeight = 16.sp
 )
 
-val labelLargeProminent = TextStyle(
-    fontFamily = robotoFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 14.sp,
-    lineHeight = 20.sp,
-    letterSpacing = (0.1).sp
-)
 
 val labelLarge = TextStyle(
     fontFamily = robotoFamily,
@@ -133,21 +91,6 @@ val labelLarge = TextStyle(
     letterSpacing = (0.1).sp
 )
 
-val labelMediumProminent = TextStyle(
-    fontFamily = robotoFamily,
-    fontWeight = FontWeight.Bold,
-    fontSize = 12.sp,
-    lineHeight = 16.sp,
-    letterSpacing = (0.5).sp
-)
-
-val labelMedium = TextStyle(
-    fontFamily = robotoFamily,
-    fontWeight = FontWeight.Medium,
-    fontSize = 12.sp,
-    lineHeight = 16.sp,
-    letterSpacing = (0.5).sp
-)
 
 val labelSmall = TextStyle(
     fontFamily = robotoFamily,

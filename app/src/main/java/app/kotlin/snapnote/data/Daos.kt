@@ -40,4 +40,7 @@ interface NoteDao {
 
     @Query("UPDATE notes SET isPinned = FALSE")
     suspend fun unpinNote()
+
+    @Query("SELECT workRequestId FROM notes WHERE id = :id")
+    fun getWorkRequestId(id: Int): Flow<String?>
 }

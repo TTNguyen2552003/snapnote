@@ -1,16 +1,18 @@
 package app.kotlin.snapnote.ui.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.work.WorkManager
 import app.kotlin.snapnote.SnapnoteApplication
 import app.kotlin.snapnote.data.Note
 import app.kotlin.snapnote.data.SnapnoteRepository
 import app.kotlin.snapnote.data.models.NoteUiModel
-import app.kotlin.snapnote.data.models.noteToNoteUiModel
+import app.kotlin.snapnote.data.models.convertNoteToNoteUiModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +22,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 data class HomeScreenUiState(
     val notes: List<NoteUiModel> = emptyList(),
@@ -29,7 +32,8 @@ data class HomeScreenUiState(
 )
 
 class HomeScreenViewModel(
-    private val snapnoteRepository: SnapnoteRepository
+    private val snapnoteRepository: SnapnoteRepository,
+    private val context: Context
 ) : ViewModel() {
     private val _uiState: MutableStateFlow<HomeScreenUiState> =
         MutableStateFlow(value = HomeScreenUiState())
@@ -53,7 +57,6 @@ class HomeScreenViewModel(
         getAllNotes()
     }
 
-
     private fun getAllNotes() {
         viewModelScope.launch {
             val currentSortingType: String = _uiState.value.sortBy
@@ -63,7 +66,7 @@ class HomeScreenViewModel(
                     tempNotes = snapnoteRepository
                         .getAllNotes()
                         .first()
-                        .map { noteToNoteUiModel(note = it) }
+                        .map { convertNoteToNoteUiModel(note = it) }
 
                     _uiState.update { currentState ->
                         currentState.copy(
@@ -75,7 +78,7 @@ class HomeScreenViewModel(
                     tempNotes = snapnoteRepository
                         .getAllNotesSortedByTitle()
                         .first()
-                        .map { noteToNoteUiModel(note = it) }
+                        .map { convertNoteToNoteUiModel(note = it) }
 
                     _uiState.update { currentState ->
                         currentState.copy(
@@ -87,7 +90,7 @@ class HomeScreenViewModel(
                     tempNotes = snapnoteRepository
                         .getAllNotesSortedByCompletion()
                         .first()
-                        .map { noteToNoteUiModel(note = it) }
+                        .map { convertNoteToNoteUiModel(note = it) }
 
                     _uiState.update { currentState ->
                         currentState.copy(notes = tempNotes)
@@ -96,7 +99,7 @@ class HomeScreenViewModel(
                     val tempGroupByFolder: Map<String, List<NoteUiModel>> = snapnoteRepository
                         .getAllNotes()
                         .first()
-                        .map { noteToNoteUiModel(note = it) }
+                        .map { convertNoteToNoteUiModel(note = it) }
                         .groupBy { it.folderName }
 
                     _uiState.update { currentState ->
@@ -115,7 +118,6 @@ class HomeScreenViewModel(
             getAllNotes()
         }
     }
-
 
     fun pinOrUnpin(id: Int) {
         viewModelScope.launch {
@@ -137,6 +139,13 @@ class HomeScreenViewModel(
     fun deleteNote(id: Int) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
+//                Delete the scheduled notification before delete the note
+                val workRequestId: String? = snapnoteRepository.getWorkRequestId(id = id).first()
+                workRequestId?.let {
+                    WorkManager.getInstance(context).cancelWorkById(UUID.fromString(workRequestId))
+                }
+
+//                Delete note
                 snapnoteRepository.deleteNote(id = id)
             }
             getAllNotes()
@@ -158,7 +167,8 @@ class HomeScreenViewModel(
                     application.appContainer.snapnoteRepository
 
                 HomeScreenViewModel(
-                    snapnoteRepository = snapnoteRepository
+                    snapnoteRepository = snapnoteRepository,
+                    context = application.applicationContext
                 )
             }
         }

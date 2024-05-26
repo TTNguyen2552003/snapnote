@@ -56,7 +56,6 @@ import app.kotlin.snapnote.ui.theme.labelSmall
 import app.kotlin.snapnote.ui.theme.notScale
 import app.kotlin.snapnote.ui.theme.onSurfaceDark
 import app.kotlin.snapnote.ui.theme.onSurfaceLight
-import app.kotlin.snapnote.ui.theme.onSurfaceVariantLightMediumContrast
 import app.kotlin.snapnote.ui.theme.outlineDark
 import app.kotlin.snapnote.ui.theme.outlineLight
 import app.kotlin.snapnote.ui.theme.outlineVariantDark
@@ -93,9 +92,9 @@ fun SearchingScreen(
             .drawBehind {
                 drawRect(
                     color = if (isDarkMode)
-                    surfaceDark
+                        surfaceDark
                     else
-                    surfaceLight
+                        surfaceLight
                 )
             }
             .windowInsetsPadding(insets = WindowInsets.statusBars),
@@ -180,6 +179,12 @@ fun SearchingScreen(
                                         .wrapContentHeight()
                                         .weight(weight = 1f)
                                         .focusRequester(focusRequester = focusRequester),
+                                    textStyle = bodySmall.notScale().copy(
+                                        color = if (isDarkMode)
+                                            onSurfaceDark
+                                        else
+                                            onSurfaceLight
+                                    ),
                                     keyboardOptions = KeyboardOptions
                                         .Default
                                         .copy(imeAction = ImeAction.Search),
@@ -244,11 +249,7 @@ fun SearchingScreen(
                     modifier = Modifier.pointerInput(Unit) {
                         detectTapGestures(
                             onPress = {
-                                navController.navigate(
-                                    route = Destination.MainScreen.route
-                                ) {
-                                    navController.popBackStack()
-                                }
+                                navController.popBackStack()
                             }
                         )
                     }

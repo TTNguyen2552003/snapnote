@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import app.kotlin.snapnote.Destination
 import app.kotlin.snapnote.R
 import app.kotlin.snapnote.ui.theme.bodySmall
 import app.kotlin.snapnote.ui.theme.notScale

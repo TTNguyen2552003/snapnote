@@ -1,16 +1,17 @@
 package app.kotlin.snapnote.ui.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import app.kotlin.snapnote.MAX_BODY_LENGTH
+import app.kotlin.snapnote.MAX_TITLE_LENGTH
 import app.kotlin.snapnote.SnapnoteApplication
 import app.kotlin.snapnote.data.Note
 import app.kotlin.snapnote.data.SnapnoteRepository
-import app.kotlin.snapnote.ui.views.MAX_BODY_LENGTH
-import app.kotlin.snapnote.ui.views.MAX_TITLE_LENGTH
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +32,7 @@ data class CreateNoteScreenUiState(
 
 class CreateNoteScreenViewModel(
     private val snapnoteRepository: SnapnoteRepository,
+    private val context: Context
 ) : ViewModel() {
     private val _uiState: MutableStateFlow<CreateNoteScreenUiState> =
         MutableStateFlow(CreateNoteScreenUiState())
@@ -40,17 +42,8 @@ class CreateNoteScreenViewModel(
     lateinit var folders: Set<String>
 
     init {
+        _uiState.value = CreateNoteScreenUiState()
         getAllFolder()
-        _uiState.update { currentState ->
-            currentState.copy(
-                currentFolderName = "Uncategorized",
-                title = "",
-                body = "",
-                date = "Date",
-                time = "Time",
-                isReminderSet = false
-            )
-        }
     }
 
     private fun getAllFolder() {
@@ -63,7 +56,6 @@ class CreateNoteScreenViewModel(
             }
         }
     }
-
 
     fun updateTitle(newTitle: String) {
         _uiState.update { currentState ->
@@ -129,22 +121,36 @@ class CreateNoteScreenViewModel(
 
     fun saveNote() {
         val currentState: CreateNoteScreenUiState = _uiState.value
+
+        val note = Note(
+            folderName = currentState.currentFolderName,
+            title = currentState.title,
+            body = currentState.body,
+            date = if (currentState.date != "Date" && currentState.isReminderSet)
+                currentState.date
+            else
+                "",
+            time = if (currentState.time != "Time" && currentState.isReminderSet)
+                currentState.time
+            else
+                ""
+        )
+
+        val workRequestId: String? =
+            if (note.date != "" && note.time != "" && currentState.isReminderSet) {
+                snapnoteRepository
+                    .makeNotification(
+                        context = context,
+                        note = note
+                    )
+            } else {
+                null
+            }
+
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 snapnoteRepository.addNote(
-                    note = Note(
-                        folderName = currentState.currentFolderName,
-                        title = currentState.title,
-                        body = currentState.body,
-                        date = if (currentState.date != "Date")
-                            currentState.date
-                        else
-                            "",
-                        time = if (currentState.time != "Time")
-                            currentState.time
-                        else
-                            ""
-                    )
+                    note = note.copy(workRequestId = workRequestId)
                 )
             }
         }
@@ -158,7 +164,8 @@ class CreateNoteScreenViewModel(
                 val snapnoteRepository: SnapnoteRepository =
                     application.appContainer.snapnoteRepository
                 CreateNoteScreenViewModel(
-                    snapnoteRepository = snapnoteRepository
+                    snapnoteRepository = snapnoteRepository,
+                    context = application.applicationContext
                 )
             }
         }

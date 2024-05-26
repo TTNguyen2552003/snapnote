@@ -1,8 +1,6 @@
 package app.kotlin.snapnote.data
 
 import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "notes")
@@ -15,5 +13,6 @@ data class Note(
     val date: String = "",
     val time: String = "",
     val isPinned: Boolean = false,
-    val isDone: Boolean = false
+    val isDone: Boolean = false,
+    val workRequestId: String? = null
 )

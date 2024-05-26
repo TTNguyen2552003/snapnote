@@ -1,5 +1,6 @@
 package app.kotlin.snapnote.ui.viewmodels
 
+import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -11,11 +12,12 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.work.WorkManager
 import app.kotlin.snapnote.SnapnoteApplication
 import app.kotlin.snapnote.data.Note
 import app.kotlin.snapnote.data.SnapnoteRepository
 import app.kotlin.snapnote.data.models.NoteUiModel
-import app.kotlin.snapnote.data.models.noteToNoteUiModel
+import app.kotlin.snapnote.data.models.convertNoteToNoteUiModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,6 +29,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 data class Highlights(
     val title: AnnotatedString = AnnotatedString(text = ""),
@@ -41,6 +44,7 @@ data class SearchingScreenUiState(
 
 class SearchingScreenViewModel(
     private val snapnoteRepository: SnapnoteRepository,
+    private val context: Context
 ) : ViewModel() {
     private val _uiState: MutableStateFlow<SearchingScreenUiState> =
         MutableStateFlow(value = SearchingScreenUiState())
@@ -101,7 +105,7 @@ class SearchingScreenViewModel(
                                 .searchNote(keyword = keyword)
                                 .first()
                                 .map {
-                                    noteToNoteUiModel(note = it)
+                                    convertNoteToNoteUiModel(note = it)
                                 }
                         )
                     }
@@ -158,9 +162,16 @@ class SearchingScreenViewModel(
     fun deleteNote(id: Int) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
+//                Delete the scheduled notification before delete the note
+                val workRequestId: String? = snapnoteRepository.getWorkRequestId(id = id).first()
+                workRequestId?.let {
+                    WorkManager.getInstance(context).cancelWorkById(UUID.fromString(workRequestId))
+                }
+
+//                Delete note
                 snapnoteRepository.deleteNote(id = id)
-                searchNote()
             }
+            searchNote()
         }
     }
 
@@ -197,7 +208,8 @@ class SearchingScreenViewModel(
                 val snapnoteRepository: SnapnoteRepository =
                     application.appContainer.snapnoteRepository
                 SearchingScreenViewModel(
-                    snapnoteRepository = snapnoteRepository
+                    snapnoteRepository = snapnoteRepository,
+                    context = application.applicationContext
                 )
             }
         }

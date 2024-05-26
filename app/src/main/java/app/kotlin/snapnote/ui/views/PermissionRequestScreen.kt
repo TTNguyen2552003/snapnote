@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import app.kotlin.snapnote.Destination
 import app.kotlin.snapnote.R
 import app.kotlin.snapnote.ui.theme.bodyMedium
 import app.kotlin.snapnote.ui.theme.bodySmall
@@ -199,14 +200,9 @@ fun PermissionRequestScreen(
                                 showRequestDialog = false
                             }
 
-                            if ((notificationPermissionState.status.shouldShowRationale
-                                        || !(
-                                        notificationPermissionState.status.shouldShowRationale
-                                                && notificationPermissionState.status.isGranted)
-                                        )
-                                && showRequestDialog
-                            ) {
+                            if (!notificationPermissionState.status.isGranted && showRequestDialog) {
                                 HandlePermissionConflict(
+                                    isDarkMode = isDarkMode,
                                     notificationPermissionState = notificationPermissionState,
                                     requestPermission = requestPermission,
                                     goToSetting = goToSetting,
@@ -390,12 +386,7 @@ fun HandlePermissionConflict(
             LaunchedEffect(Unit) {
                 while (true) {
                     atEnd = !atEnd
-                    delay(
-                        timeMillis = if (notificationPermissionState.status.shouldShowRationale)
-                            2500L
-                        else
-                            4000L
-                    )
+                    delay(timeMillis = 4000L)
                 }
             }
             val size: Dp = if (notificationPermissionState.status.shouldShowRationale)

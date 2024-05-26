@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import app.kotlin.snapnote.Destination
 import app.kotlin.snapnote.R
 import app.kotlin.snapnote.data.models.NoteUiModel
 import app.kotlin.snapnote.ui.theme.bodySmall
@@ -364,12 +365,11 @@ fun MainScreen(
                                             .wrapContentSize()
                                             .clip(shape = RoundedCornerShape(size = 8.dp))
                                             .drawBehind {
-                                                drawRoundRect(
+                                                drawRect(
                                                     color = if (isDarkMode)
                                                         surfaceContainerDark
                                                     else
-                                                        surfaceContainerLight,
-                                                    cornerRadius = CornerRadius(x = 8.dp.toPx())
+                                                        surfaceContainerLight
                                                 )
                                             }
                                     ) {
@@ -1132,16 +1132,13 @@ fun MainScreen(
                     else
                         AnimatedContentTransitionScope.SlideDirection.Left
                 )
-            }
+            },
+            label = "Home Screen and InfoScreen Transition"
         ) { targetState ->
             when (targetState) {
                 0 -> HomeScreen()
                 else -> InfoScreen()
             }
         }
-//        if (selectedMainScreenDestination == mainScreenDestinations[0].index)
-//            HomeScreen()
-//        else if (selectedMainScreenDestination == mainScreenDestinations[1].index)
-//            InfoScreen()
     }
 }

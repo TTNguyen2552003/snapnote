@@ -82,6 +82,10 @@ dependencies {
     val preferenceDataStoreVersion = "1.1.1"
     implementation("androidx.datastore:datastore-preferences:$preferenceDataStoreVersion")
 
+//    Add WorkManager dependency
+    val workVersion = "2.9.0"
+    implementation("androidx.work:work-runtime-ktx:$workVersion")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
