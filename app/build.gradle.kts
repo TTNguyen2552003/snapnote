@@ -86,6 +86,9 @@ dependencies {
     val workVersion = "2.9.0"
     implementation("androidx.work:work-runtime-ktx:$workVersion")
 
+//    Add splash screen
+    implementation("androidx.core:core-splashscreen:1.0.0")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

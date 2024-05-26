@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <style name="Theme.Snapnote" parent="android:Theme.Material.Light.NoActionBar" >
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/snapnote_splash_screen_logo</item>
+        <item name="android:windowSplashScreenAnimationDuration">1000</item>
+    </style>
 
-    <style name="Theme.Snapnote" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
