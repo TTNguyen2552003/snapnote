@@ -23,4 +23,6 @@
     <string name="button_label_create">Create</string>
     <string name="button_label_ok">Ok</string>
     <string name="time_picker_title">Select time</string>
+    <string name="button_label_setting">Setting</string>
+    <string name="rationale">We don\'t want you to miss any notification from the app.</string>
 </resources>

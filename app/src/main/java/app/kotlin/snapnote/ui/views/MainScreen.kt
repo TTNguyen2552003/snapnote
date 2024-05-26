@@ -498,7 +498,7 @@ fun MainScreen(
                                             ) {
 //                                            Title
                                                 Text(
-                                                    text = note.title + " " + note.originalIndex.toString(),
+                                                    text = note.title,
                                                     style = titleSmall.notScale(),
                                                     color = if (!note.isDone) {
                                                         if (isDarkMode)

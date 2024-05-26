@@ -315,9 +315,9 @@ fun HandlePermissionConflict(
         confirmButton = {
             Text(
                 text = if (!notificationPermissionState.status.shouldShowRationale && !notificationPermissionState.status.isGranted)
-                    "Setting"
+                    stringResource(id = R.string.button_label_setting)
                 else
-                    "Ok",
+                    stringResource(id = R.string.button_label_ok),
                 style = labelLarge.notScale(),
                 color = if (isDarkMode)
                     primaryDark
@@ -341,7 +341,7 @@ fun HandlePermissionConflict(
         },
         title = {
             val text = AnnotatedString.Builder()
-            text.append(text = "Allow ")
+            text.append(text = "Allow")
             text.withStyle(
                 style = SpanStyle(fontWeight = FontWeight.Bold)
             ) {
@@ -359,7 +359,7 @@ fun HandlePermissionConflict(
         },
         text = {
             Text(
-                text = "We don't want you to miss any notification from the app.",
+                text = stringResource(id = R.string.rationale),
                 style = bodyMedium.notScale(),
                 color = if (isDarkMode)
                     onSurfaceDark
