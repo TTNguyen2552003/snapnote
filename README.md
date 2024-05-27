@@ -32,11 +32,11 @@ git clone https://github.com/TTNguyen2552003/snapnote.git
 4. Run the app on a connected Android device or emulator.
 
 ## Screenshots
-<div style="display: flex; justify-content: center; gap: 10px;">
+<p align="center">
   <img src="https://github.com/TTNguyen2552003/snapnote/blob/master/snapnote_screenshot_1.gif" alt="Snapnote screenshot 1" width="200"/>
   <img src="https://github.com/TTNguyen2552003/snapnote/blob/master/snapnote_screenshot_2.gif" alt="Snapnote sceenshot 2" width="200"/>
   <img src="https://github.com/TTNguyen2552003/snapnote/blob/master/snapnote_screenshot_3.gif" alt="Snapnote screenshot 3" width="200"/>
-</div>
+</p>
 
 ## Resources
 - You can download the file apk [here](https://drive.usercontent.google.com/download?id=1irvgkQKZgaimvW4YR2NuqiwHUpngKa8F&export=download&authuser=0&confirm=t&uuid=621b5b56-2df4-474c-8d7a-cc32233ec3c9&at=APZUnTXSCVbgh7qDuw9UHTHdwbl7:1716784614112)
